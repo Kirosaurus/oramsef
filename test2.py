@@ -29,6 +29,7 @@ cameraInit = cv2.VideoCapture(0)
 while True :
     success, camera = cameraInit.read()
     cv2.imshow("Camera 1", camera)
-    adjusted_detect_face(camera)
+    camera = cv2.flip(camera, 1)
+
     if cv2.waitKey(1) & 0xFF == ord('q') :
         break
