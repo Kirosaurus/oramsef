@@ -24,13 +24,13 @@ app.add_middleware(
 fatigue_state = {
     "total_blinks": 0,
     "current_ear": 0.0,
+    "dynamic_threshold": 0.0,
     "is_fatigued": False,
     "blink_rate_per_minute": 0,
     "message": "Normal"
 }
 
 # Konfigurasi EAR dan Kelelahan Mata
-EAR_THRESHOLD = 0.22      # Batas nilai EAR di mana mata dianggap tertutup
 CONSEC_FRAMES = 2         # Jumlah frame berturut-turut mata harus tertutup agar dihitung 1 kedipan
 FATIGUE_THRESHOLD = 20    # Threshold kedipan per menit (bisa disesuaikan, misal terlalu sering berkedip = lelah)
 
@@ -60,7 +60,7 @@ def eye_aspect_ratio(landmarks, eye_indices, frame_width, frame_height):
     
     # Rumus EAR
     ear = (v1 + v2) / (2.0 * h1)
-    return ear, pts
+    return ear, pts, v1, v2, h1
 
 def process_camera():
     """Fungsi yang berjalan di thread terpisah untuk memproses Kamera dengan OpenCV & MediaPipe"""
@@ -80,6 +80,47 @@ def process_camera():
     total_blinks = 0
     start_time = time.time()
     
+    # Simpan histori (timestamp, v1, v2, h1) selama N detik terakhir
+    history = {
+        "left":  [],
+        "right": []
+    }
+    
+    # Durasi (detik) memori penyimpanan nilai min/max
+    WINDOW_DURATION = 10.0
+    
+    def update_and_get_threshold(side, v1, v2, h1):
+        if h1 == 0: return 0.22 # Fallback to prevent Div by 0
+        
+        current_time = time.time()
+        
+        # Tambahkan data frame ini
+        history[side].append((current_time, v1, v2, h1))
+        
+        # Bersihkan data yang umurnya lebih dari WINDOW_DURATION (10 detik)
+        # Slicing the list to keep only fresh items
+        history[side] = [item for item in history[side] if current_time - item[0] <= WINDOW_DURATION]
+        
+        # Temukan min dan max di jendela memori yang tersisa
+        v1_list = [item[1] for item in history[side]]
+        v2_list = [item[2] for item in history[side]]
+        h1_list = [item[3] for item in history[side]]
+        
+        v1_min, v1_max = min(v1_list), max(v1_list)
+        v2_min, v2_max = min(v2_list), max(v2_list)
+        h1_min, h1_max = min(h1_list), max(h1_list)
+        
+        # Mencegah pembagian dengan nol
+        h1_max_val = h1_max if h1_max > 0 else h1
+        h1_min_val = h1_min if h1_min > 0 else h1
+
+        # Equation 3 dan 4 (Modified EAR formula)
+        ear_closed = (v1_min + v2_min) / (2.0 * h1_max_val)
+        ear_open = (v1_max + v2_max) / (2.0 * h1_min_val)
+        
+        # Equation 5 (Modified Threshold)
+        return (ear_closed + ear_open) / 2.0
+    
     while cap.isOpened():
         success, frame = cap.read()
         if not success:
@@ -95,20 +136,31 @@ def process_camera():
         
         if results.multi_face_landmarks:
             for face_landmarks in results.multi_face_landmarks:
-                # Dapatkan EAR untuk Mata Kiri dan Kanan
-                left_ear, left_pts = eye_aspect_ratio(face_landmarks, LEFT_EYE, w, h)
-                right_ear, right_pts = eye_aspect_ratio(face_landmarks, RIGHT_EYE, w, h)
+                # Dapatkan EAR untuk Mata Kiri dan Kanan, beserta jarak untuk hitung Modified EAR
+                left_ear, left_pts, l_v1, l_v2, l_h1 = eye_aspect_ratio(face_landmarks, LEFT_EYE, w, h)
+                right_ear, right_pts, r_v1, r_v2, r_h1 = eye_aspect_ratio(face_landmarks, RIGHT_EYE, w, h)
                 
                 # EAR rata-rata
                 avg_ear = (left_ear + right_ear) / 2.0
                 fatigue_state["current_ear"] = round(avg_ear, 3)
+                
+                # Hitung Dynamic Threshold (Modified EAR Threshold)
+                left_threshold = update_and_get_threshold("left", l_v1, l_v2, l_h1)
+                right_threshold = update_and_get_threshold("right", r_v1, r_v2, r_h1)
+                
+                # Cek jika baru kalibrasi maka set minimal default agar program tidak macet jika mata belum berkedip
+                dynamic_threshold = (left_threshold + right_threshold) / 2.0
+                if dynamic_threshold > 0.4 or dynamic_threshold < 0.15:
+                        dynamic_threshold = 0.22 # Fallback sebelum max/min terbentuk stabil
+
+                fatigue_state["dynamic_threshold"] = round(dynamic_threshold, 3)
                 
                 # Gambar Landmark (Polygon) untuk visualisasi
                 cv2.polylines(frame, [np.array(left_pts)], True, (0, 255, 0), 1)
                 cv2.polylines(frame, [np.array(right_pts)], True, (0, 255, 0), 1)
                 
                 # Logika Deteksi Kedipan (Blink)
-                if avg_ear < EAR_THRESHOLD:
+                if avg_ear < dynamic_threshold:
                     blink_counter += 1
                 else:
                     if blink_counter >= CONSEC_FRAMES:
@@ -135,7 +187,7 @@ def process_camera():
                             fatigue_state["message"] = "Normal"
 
                 # Tampilkan text di layar (imshow)
-                cv2.putText(frame, f"EAR: {avg_ear:.2f}", (30, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
+                cv2.putText(frame, f"EAR: {avg_ear:.2f} | Thr: {dynamic_threshold:.2f}", (30, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
                 cv2.putText(frame, f"Blinks: {total_blinks}", (30, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 0), 2)
                 cv2.putText(frame, f"Rate/Min: {fatigue_state['blink_rate_per_minute']}", (30, 90), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 0), 2)
                 
