@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EyeGuard — Detektor CVS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=DM+Mono:wght@400;500&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body class="detector-body">
+
+  <!-- NAV -->
+  <nav class="detector-nav">
+    <a class="logo" href="index.html">
+      <div class="logo-mark"></div>
+      <span class="logo-name">Eye<span>Guard</span></span>
+    </a>
+    <div class="nav-mid">
+      <span class="nav-page-indicator">
+        <a href="index.html" style="color:inherit;text-decoration:none;">Beranda</a>
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M6 4l4 4-4 4" />
+        </svg>
+      </span>
+      <span class="nav-page-current">Detektor CVS</span>
+    </div>
+    <div class="nav-right">
+      <div class="nav-status idle" id="navStatus">
+        <div class="status-dot" id="navDot"></div>
+        <span id="navStatusText">Siap</span>
+      </div>
+      <a class="nav-back" href="index.html">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round">
+          <path d="M10 4l-6 4 6 4" />
+        </svg>
+        Beranda
+      </a>
+    </div>
+  </nav>
+
+  <!-- MAIN LAYOUT -->
+  <main class="main">
+
+    <!-- CAMERA PANEL -->
+    <div class="camera-panel">
+      <div class="camera-topbar">
+        <div class="camera-topbar-left">
+          <span class="camera-topbar-title">Feed Kamera</span>
+          <span class="cam-badge standby" id="camBadge">Standby</span>
+        </div>
+        <span class="cam-resolution" id="camRes">— × —</span>
+      </div>
+
+      <div class="camera-view" id="cameraView">
+        <!-- Idle state -->
+        <div class="cam-idle" id="camIdle">
+          <div class="cam-idle-icon">
+            <svg viewBox="0 0 24 24">
+              <path d="M23 7l-7 5 7 5V7z" />
+              <rect x="1" y="5" width="15" height="14" rx="2" />
+            </svg>
+          </div>
+          <div class="cam-idle-title">Kamera Belum Aktif</div>
+          <div class="cam-idle-sub">Klik "Mulai Sesi" untuk mengaktifkan</div>
+        </div>
+
+        <!-- Active state -->
+        <div class="cam-active" id="camActive">
+          <!-- Video asli dari Webcam -->
+          <video id="webcamView" autoplay muted playsinline
+            style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; border-radius: 8px; z-index: 1;"></video>
+          <!-- Canvas Tersembunyi -->
+          <canvas id="hiddenCanvas" style="display: none;"></canvas>
+
+          <div class="scan-sweep" style="z-index: 2;"></div>
+
+          <!-- Face frame (beri z-index agar muncul di atas video) -->
+          <div class="face-frame" style="z-index: 2;">
+            <div class="ff-corner ff-tl"></div>
+            <div class="ff-corner ff-tr"></div>
+            <div class="ff-corner ff-bl"></div>
+            <div class="ff-corner ff-br"></div>
+          </div>
+
+          <!-- Landmark dots - Left eye -->
+          <div class="lm-det" id="ll1" style="top:38%;left:32%;"></div>
+          <div class="lm-det" id="ll2" style="top:35%;left:37%;"></div>
+          <div class="lm-det" id="ll3" style="top:35%;left:43%;"></div>
+          <div class="lm-det" id="ll4" style="top:38%;left:46%;"></div>
+          <div class="lm-det" id="ll5" style="top:41%;left:43%;"></div>
+          <div class="lm-det" id="ll6" style="top:41%;left:37%;"></div>
+
+          <!-- Landmark dots - Right eye -->
+          <div class="lm-det" id="rl1" style="top:38%;right:32%;"></div>
+          <div class="lm-det" id="rl2" style="top:35%;right:37%;"></div>
+          <div class="lm-det" id="rl3" style="top:35%;right:43%;"></div>
+          <div class="lm-det" id="rl4" style="top:38%;right:46%;"></div>
+          <div class="lm-det" id="rl5" style="top:41%;right:43%;"></div>
+          <div class="lm-det" id="rl6" style="top:41%;right:37%;"></div>
+
+          <!-- HUD top-left -->
+          <div class="hud-top-left">
+            <div class="hud-chip-det">
+              <span class="hud-chip-label">EAR</span>
+              <span id="hudEar">0.28</span>
+            </div>
+            <div class="hud-chip-det">
+              <span class="hud-chip-label">DIST</span>
+              <span id="hudDist">48 cm</span>
+            </div>
+            <div class="hud-chip-det">
+              <span class="hud-chip-label">BLINK</span>
+              <span id="hudBlink">15/min</span>
+            </div>
+          </div>
+
+          <!-- HUD bottom -->
+          <div class="hud-bottom">
+            <div class="hud-fps" id="hudFps">30.0 fps</div>
+            <div class="hud-confidence">
+              Keypoint conf: <strong id="hudConf">98.2%</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stats bar -->
+      <div class="camera-stats">
+        <div class="cam-stat">
+          <div class="cam-stat-label">EAR Score</div>
+          <div class="cam-stat-val" id="statEar">—</div>
+          <div class="cam-stat-sub">ambang batas: 0.25</div>
+        </div>
+        <div class="cam-stat">
+          <div class="cam-stat-label">Jarak Layar</div>
+          <div class="cam-stat-val" id="statDist">—</div>
+          <div class="cam-stat-sub">OSHA: 46–61 cm</div>
+        </div>
+        <div class="cam-stat">
+          <div class="cam-stat-label">Frekuensi Kedip</div>
+          <div class="cam-stat-val" id="statBlink">—</div>
+          <div class="cam-stat-sub">normal: 12–20/min</div>
+        </div>
+        <div class="cam-stat">
+          <div class="cam-stat-label">Status CVS</div>
+          <div class="cam-stat-val" id="statStatus">—</div>
+          <div class="cam-stat-sub" id="statStatusSub">—</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SIDE COLUMN -->
+    <div class="side-col">
+
+      <!-- Timer 20-20-20 -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Timer 20-20-20</span>
+          <span style="font-size:10px;color:var(--ink-dim);">Pengingat istirahat mata</span>
+        </div>
+        <div class="panel-body">
+          <div class="timer-display">
+            <div class="timer-ring-wrap">
+              <svg class="timer-ring-svg" viewBox="0 0 68 68">
+                <circle class="ring-track" cx="34" cy="34" r="30" />
+                <circle class="ring-prog" id="timerRing" cx="34" cy="34" r="30" />
+              </svg>
+              <div class="timer-center">
+                <div class="timer-num" id="timerNum">20:00</div>
+                <div class="timer-unit">menit</div>
+              </div>
+            </div>
+            <div class="timer-info">
+              <div class="timer-label">Hingga Istirahat</div>
+              <div class="timer-sub">Lihat objek sejauh ±6 meter selama 20 detik</div>
+            </div>
+          </div>
+          <div class="timer-progress-row">
+            <span class="timer-progress-label">Progres sesi ini</span>
+            <span class="timer-progress-val" id="timerPct">0%</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" id="timerBar" style="width:0%"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Parameter metrics -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Parameter Biometrik</span>
+        </div>
+        <div class="panel-body">
+          <div class="metric-rows">
+            <div class="metric-row">
+              <div class="metric-row-header">
+                <span class="metric-name">Kelelahan Mata (EAR)</span>
+                <span class="metric-status warning" id="earStatus">Sedang</span>
+              </div>
+              <div class="bar-track">
+                <div class="bar-fill" id="earBar" style="width:52%;background:var(--amber);"></div>
+              </div>
+            </div>
+            <div class="metric-row">
+              <div class="metric-row-header">
+                <span class="metric-name">Jarak Layar</span>
+                <span class="metric-status danger" id="distStatus">Terlalu Dekat</span>
+              </div>
+              <div class="bar-track">
+                <div class="bar-fill" id="distBar" style="width:30%;background:var(--red);"></div>
+              </div>
+            </div>
+            <div class="metric-row">
+              <div class="metric-row-header">
+                <span class="metric-name">Frekuensi Kedip</span>
+                <span class="metric-status normal" id="blinkStatus">Normal</span>
+              </div>
+              <div class="bar-track">
+                <div class="bar-fill" id="blinkBar" style="width:72%;background:var(--green);"></div>
+              </div>
+            </div>
+            <div class="metric-row">
+              <div class="metric-row-header">
+                <span class="metric-name">Durasi Sesi</span>
+                <span class="metric-status info" id="durStatus">00:00:00</span>
+              </div>
+              <div class="bar-track">
+                <div class="bar-fill" id="durBar" style="width:0%;background:var(--blue);"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Alerts -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Notifikasi Aktif</span>
+          <span class="cam-badge standby" id="alertCount">0 peringatan</span>
+        </div>
+        <div class="alerts-list" id="alertsList">
+          <div class="alert-item muted">
+            <div class="alert-text">Belum ada notifikasi. Mulai sesi untuk memantau kondisi mata Anda.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Controls -->
+      <div class="panel">
+        <div class="controls">
+          <button class="btn-start" id="startBtn" onclick="toggleSession()">
+            <svg viewBox="0 0 24 24">
+              <polygon points="5 3 19 12 5 21 5 3" />
+            </svg>
+            Mulai Sesi
+          </button>
+          <button class="btn-secondary" id="resetBtn" onclick="resetSession()">Reset Sesi</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- BOTTOM BAR -->
+    <div class="bottom-bar">
+      <div class="bottom-info">
+        <div class="bottom-item">
+          <span class="bottom-item-label">Durasi sesi</span>
+          <span class="session-timer" id="sessionClock">00:00:00</span>
+        </div>
+        <div class="bottom-item">
+          <span class="bottom-item-label">Total kedipan</span>
+          <span class="bottom-item-val" id="totalBlinks">—</span>
+        </div>
+        <div class="bottom-item">
+          <span class="bottom-item-label">Peringatan hari ini</span>
+          <span class="bottom-item-val" id="totalAlerts">—</span>
+        </div>
+        <div class="bottom-item">
+          <span class="bottom-item-label">Model</span>
+          <span class="bottom-item-val">MediaPipe v0.10 + CNN</span>
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--ink-dim);">Semua pemrosesan dilakukan secara lokal &bull; Tidak ada data
+        yang dikirim ke server</div>
+    </div>
+  </main>
+
+  <!-- REST OVERLAY -->
+  <div class="rest-overlay" id="restOverlay">
+    <div class="rest-card">
+      <div class="rest-eye">
+        <svg viewBox="0 0 24 24">
+          <path d="M17.8 19.2L16 11l3.5-3.5C21 6 21 4 19 4s-4 2-4 2l-8.2 1.8" />
+          <path d="M11 13L2 22M13.5 6.5l4 4" />
+        </svg>
+      </div>
+      <h2 class="rest-title">Saatnya Istirahat!</h2>
+      <p class="rest-desc">Alihkan pandangan ke objek berjarak <strong style="color:var(--green);">±6 meter</strong> (20
+        kaki) dan fokus selama 20 detik untuk merelaksasi otot siliaris mata Anda.</p>
+      <div class="rest-count" id="restCount">20</div>
+      <div class="rest-progress">
+        <div class="rest-progress-fill" id="restProgress" style="width:100%"></div>
+      </div>
+      <button class="rest-skip" onclick="skipRest()">Lewati &rarr;</button>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+
+</html>

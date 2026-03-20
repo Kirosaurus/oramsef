@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EyeGuard — Deteksi Computer Vision Syndrome</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <a class="logo" href="index.html">
+      <div class="logo-mark"></div>
+      <span class="logo-name">Eye<span>Guard</span></span>
+    </a>
+    <div class="nav-links">
+      <a class="nav-link" href="#fitur">Fitur</a>
+      <a class="nav-link" href="#cara-kerja">Cara Kerja</a>
+      <a class="nav-link" href="#tentang-cvs">Tentang CVS</a>
+    </div>
+    <a class="nav-cta" href="detector.html">Mulai Deteksi &rarr;</a>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-left">
+      <div class="hero-eyebrow">
+        <div class="eyebrow-dot"></div>
+        CNN + MediaPipe &bull; Eye Aspect Ratio
+      </div>
+      <h1 class="hero-title">
+        Jaga kesehatan<br>
+        <span class="accent">mata digital</span><br>
+        <span class="line2">Anda setiap saat</span>
+      </h1>
+      <p class="hero-body">
+        EyeGuard memantau kondisi mata Anda secara real-time menggunakan Computer Vision dan algoritma Eye Aspect Ratio (EAR), memberikan peringatan proaktif sebelum Computer Vision Syndrome berkembang.
+      </p>
+      <div class="hero-actions">
+        <a class="btn-hero-primary" href="detector.html">
+          Mulai Deteksi Sekarang
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+        </a>
+        <a class="btn-hero-secondary" href="#cara-kerja">
+          Pelajari cara kerja
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 3v10M4 9l4 4 4-4"/></svg>
+        </a>
+      </div>
+    </div>
+
+    <div class="hero-visual">
+      <div class="float-badge">
+        <div class="float-badge-icon">👁</div>
+        <div class="float-badge-text">
+          <div class="float-badge-title">Deteksi Aktif</div>
+          <div class="float-badge-sub">EAR: 0.28 &bull; Normal</div>
+        </div>
+      </div>
+      <div class="float-badge2">
+        Timer 20-20-20: <strong>14:32</strong> tersisa
+      </div>
+      <div class="vis-card">
+        <div class="vis-bar">
+          <div class="vis-dot" style="background:#ff5f57;"></div>
+          <div class="vis-dot" style="background:#febc2e;"></div>
+          <div class="vis-dot" style="background:#28c840;"></div>
+          <span style="color:rgba(255,255,255,0.3);font-size:11px;margin-left:8px;font-family:var(--font-body);">EyeGuard — Detector</span>
+        </div>
+        <div class="vis-screen">
+          <div class="scan-line"></div>
+          <div class="face-outline">
+            <div class="lm lm-l1"></div>
+            <div class="lm lm-l2"></div>
+            <div class="lm lm-l3"></div>
+            <div class="lm lm-l4"></div>
+            <div class="lm lm-l5"></div>
+            <div class="lm lm-l6"></div>
+            <div class="lm lm-r1"></div>
+            <div class="lm lm-r2"></div>
+            <div class="lm lm-r3"></div>
+            <div class="lm lm-r4"></div>
+            <div class="lm lm-r5"></div>
+            <div class="lm lm-r6"></div>
+            <div class="ear-line-vis ear-l"></div>
+            <div class="ear-line-vis ear-r"></div>
+          </div>
+          <div class="vis-hud">
+            <div class="hud-chip"><span class="chip-label">EAR</span>0.28</div>
+            <div class="hud-chip"><span class="chip-label">Jarak</span>48 cm</div>
+            <div class="hud-chip"><span class="chip-label">Kedip</span>15/min</div>
+          </div>
+        </div>
+        <div class="vis-stats">
+          <div class="vis-stat">
+            <div class="vis-stat-num" style="color:var(--green);">Normal</div>
+            <div class="vis-stat-label">Status Mata</div>
+          </div>
+          <div class="vis-stat">
+            <div class="vis-stat-num">98%</div>
+            <div class="vis-stat-label">Akurasi CNN</div>
+          </div>
+          <div class="vis-stat">
+            <div class="vis-stat-num">Real-time</div>
+            <div class="vis-stat-label">Pemrosesan</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- STATS STRIP -->
+  <div class="stats-strip">
+    <div class="stat-item">
+      <div class="stat-num">64–90%</div>
+      <div class="stat-desc">Prevalensi CVS di seluruh dunia, diperkirakan menyentuh 60 juta kasus aktif</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num">&gt;2 jam</div>
+      <div class="stat-desc">Durasi penggunaan komputer per hari sudah cukup meningkatkan risiko CVS jangka panjang</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num">98%</div>
+      <div class="stat-desc">Target akurasi deteksi blink berbasis Computer Vision yang ingin dicapai sistem ini</div>
+    </div>
+  </div>
+
+  <!-- FEATURES -->
+  <section class="section" id="fitur">
+    <div class="reveal">
+      <div class="section-label">Fitur Utama</div>
+      <h2 class="section-title">Deteksi cerdas, intervensi proaktif</h2>
+      <p class="section-sub">Sistem terintegrasi yang menggabungkan tiga modul utama: pendeteksian, pemrosesan citra, dan notifikasi pintar.</p>
+    </div>
+    <div class="features-grid reveal">
+      <div class="feat-card">
+        <div class="feat-icon-wrap">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7S2 12 2 12z"/></svg>
+        </div>
+        <div class="feat-title">Deteksi EAR Real-Time</div>
+        <div class="feat-desc">Mengukur Eye Aspect Ratio dari 6 titik landmark mata (P1–P6) menggunakan MediaPipe Face Mesh secara terus-menerus melalui webcam.</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon-wrap">
+          <svg viewBox="0 0 24 24"><path d="M3 12h18M3 6h18M3 18h18"/><rect x="8" y="9" width="8" height="6" rx="1"/></svg>
+        </div>
+        <div class="feat-title">Monitor Jarak Layar</div>
+        <div class="feat-desc">Memantau jarak pandang pengguna terhadap layar secara otomatis. Peringatan aktif jika jarak di luar standar OSHA (46–61 cm).</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon-wrap">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </div>
+        <div class="feat-title">Pengingat 20-20-20</div>
+        <div class="feat-desc">Notifikasi otomatis setiap 20 menit agar mata beristirahat dengan melihat objek berjarak 6 meter selama 20 detik.</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon-wrap">
+          <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+        </div>
+        <div class="feat-title">Berbasis Web</div>
+        <div class="feat-desc">Dapat diakses langsung dari browser tanpa instalasi. Menggunakan JavaScript untuk antarmuka dan akses webcam, serta FastAPI untuk backend.</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon-wrap">
+          <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+        <div class="feat-title">Privasi Terjaga</div>
+        <div class="feat-desc">Pemrosesan citra dilakukan secara lokal. Data wajah tidak dikirim ke server eksternal. Sepenuhnya berjalan di perangkat pengguna.</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon-wrap">
+          <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        </div>
+        <div class="feat-title">Analitik Sesi</div>
+        <div class="feat-desc">Rekam dan pantau tren kelelahan mata per sesi untuk evaluasi kebiasaan penggunaan layar dan perkembangan kesehatan visual.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section class="section" id="cara-kerja">
+    <div class="reveal">
+      <div class="section-label">Cara Kerja</div>
+      <h2 class="section-title">Dari kamera ke peringatan,<br>dalam milidetik</h2>
+      <p class="section-sub">Sistem bekerja melalui tiga modul terintegrasi yang saling bertukar informasi secara real-time.</p>
+    </div>
+    <div class="how-grid reveal">
+      <div class="steps">
+        <div class="step">
+          <div class="step-left">
+            <div class="step-num">01</div>
+            <div class="step-line"></div>
+          </div>
+          <div class="step-content">
+            <div class="step-title">Akuisisi Citra Kamera</div>
+            <div class="step-desc">Webcam (min. 720p) menangkap frame wajah pengguna secara real-time. OpenCV melakukan prapemrosesan citra sebelum dianalisis.</div>
+            <span class="step-tag">OpenCV + Webcam</span>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-left">
+            <div class="step-num">02</div>
+            <div class="step-line"></div>
+          </div>
+          <div class="step-content">
+            <div class="step-title">Ekstraksi Facial Landmarks</div>
+            <div class="step-desc">MediaPipe Face Mesh mendeteksi 468 titik landmark wajah. Enam titik di sekitar setiap mata (P1–P6) diekstraksi untuk kalkulasi EAR.</div>
+            <span class="step-tag">MediaPipe + CNN</span>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-left">
+            <div class="step-num">03</div>
+            <div class="step-line"></div>
+          </div>
+          <div class="step-content">
+            <div class="step-title">Analisis EAR &amp; Parameter</div>
+            <div class="step-desc">Sistem menghitung Eye Aspect Ratio, memantau jarak layar, durasi sesi, dan kecerahan layar. Nilai EAR di bawah ambang batas mengindikasikan kelelahan.</div>
+            <span class="step-tag">Algoritma EAR + Python</span>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-left">
+            <div class="step-num">04</div>
+            <div class="step-line"></div>
+          </div>
+          <div class="step-content">
+            <div class="step-title">Notifikasi &amp; Intervensi</div>
+            <div class="step-desc">FastAPI mengirim hasil analisis ke frontend. Sistem memberikan peringatan proaktif dan rekomendasi istirahat yang dipersonalisasi.</div>
+            <span class="step-tag">FastAPI + JavaScript</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="how-diagram">
+        <div class="diag-label">Arsitektur Sistem</div>
+        <div class="arch-flow">
+          <div class="arch-module">
+            <div>
+              <div class="arch-module-name">Modul Kamera</div>
+              <div class="arch-module-tech">JavaScript + WebRTC</div>
+            </div>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--ink-dim)" stroke-width="1.5"><rect x="2" y="8" width="20" height="14" rx="2"/><path d="M16 2l4 6H4l4-6"/></svg>
+          </div>
+          <div class="arch-arrow">↓</div>
+          <div class="arch-module highlight">
+            <div>
+              <div class="arch-module-name">Modul Deteksi CVS</div>
+              <div class="arch-module-tech">MediaPipe + OpenCV + EAR</div>
+            </div>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--green-light)" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7S2 12 2 12z"/></svg>
+          </div>
+          <div class="arch-arrow">↓</div>
+          <div class="arch-module">
+            <div>
+              <div class="arch-module-name">Backend API</div>
+              <div class="arch-module-tech">Python + FastAPI</div>
+            </div>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--ink-dim)" stroke-width="1.5"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+          </div>
+          <div class="arch-arrow">↓</div>
+          <div class="arch-module">
+            <div>
+              <div class="arch-module-name">Modul Notifikasi</div>
+              <div class="arch-module-tech">JavaScript + Web Notifications</div>
+            </div>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--ink-dim)" stroke-width="1.5"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ABOUT CVS -->
+  <section class="section" id="tentang-cvs">
+    <div class="reveal">
+      <div class="section-label">Tentang CVS</div>
+      <h2 class="section-title">Mengapa ini penting?</h2>
+      <p class="section-sub">Computer Vision Syndrome (CVS) adalah kondisi nyata yang berdampak pada produktivitas dan kualitas hidup jutaan orang.</p>
+    </div>
+    <div class="cvs-grid reveal">
+      <div class="cvs-card">
+        <div class="cvs-num danger">60 jt</div>
+        <div class="cvs-title">Penderita CVS global</div>
+        <div class="cvs-desc">Diperkirakan 60 juta orang di seluruh dunia mengalami Computer Vision Syndrome, dengan prevalensi 64–90%.</div>
+      </div>
+      <div class="cvs-card">
+        <div class="cvs-num amber">&gt;3 jam</div>
+        <div class="cvs-title">Ambang risiko harian</div>
+        <div class="cvs-desc">Penggunaan komputer lebih dari 3 jam per hari dapat menyebabkan CVS, sakit punggung, sakit kepala, hingga stres berlebih.</div>
+      </div>
+      <div class="cvs-card">
+        <div class="cvs-num green">20-20-20</div>
+        <div class="cvs-title">Metode pencegahan</div>
+        <div class="cvs-desc">Setiap 20 menit, alihkan pandangan ke objek berjarak 20 kaki (±6 meter) selama 20 detik untuk merelaksasi otot mata.</div>
+      </div>
+      <div class="cvs-card">
+        <div class="cvs-num danger">78%</div>
+        <div class="cvs-title">Mahasiswa ilmu komputer</div>
+        <div class="cvs-desc">78,95% mahasiswa ilmu komputer yang menggunakan komputer berjarak &lt;50 cm mengalami CVS pada tahun 2019.</div>
+      </div>
+      <div class="cvs-wide">
+        <div class="cvs-wide-text">
+          <strong>Faktor risiko utama:</strong> jarak layar &lt;46 cm, durasi &gt;2 jam/hari, frekuensi kedip rendah, dan kecerahan layar yang tidak optimal — semuanya dapat dideteksi dan dipantau oleh EyeGuard secara real-time.
+        </div>
+        <a class="cvs-wide-action" href="detector.html">Mulai Pantau Sekarang</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA BANNER -->
+  <div class="cta-banner reveal">
+    <div class="cta-inner">
+      <div>
+        <h2 class="cta-title">Coba EyeGuard sekarang, gratis</h2>
+        <p class="cta-sub">Tidak perlu instalasi. Cukup buka browser, izinkan akses kamera, dan mulai sesi deteksi pertama Anda dalam hitungan detik.</p>
+      </div>
+      <a class="cta-btn" href="detector.html">Buka Detektor &rarr;</a>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-brand">Eye<span>Guard</span></div>
+    <div class="footer-note">FESMARO 2026 &bull; Universitas Negeri Malang &bull; Andira &bull; Immanuel &bull; Madewa</div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
