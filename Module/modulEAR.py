@@ -6,6 +6,13 @@ import threading
 import time
 import base64
 import queue
+import sys
+import os
+
+# Menambahkan parent directory ke sys.path untuk import modulDist
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+import modulDist
+
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
@@ -82,8 +89,14 @@ class FatigueDetector:
             "is_fatigued": False,
             "is_drowsy": False,
             "blink_rate_per_minute": 0,
-            "message": "Menunggu..."
+            "message": "Menunggu...",
+            "is_calibrated": False,
+            "distance": 0.0
         }
+        self.calibrate_requested = False
+        self.focal_length = 0.0
+        self.KNOWN_WIDTH = 6.3 # Estimasi ICD (Inner Canthal Distance) rata-rata manusia
+        self.KNOWN_DISTANCE = 50.0 # Asumsi estimasi jarak lengan saat kalibrasi
 
     def update_and_get_threshold(self, side, v1, v2, h1):
         if h1 == 0: return 0.22
@@ -127,6 +140,19 @@ class FatigueDetector:
                     dynamic_threshold = 0.22 
 
                 self.state["dynamic_threshold"] = round(dynamic_threshold, 3)
+                
+                # Menghitung Jarak Wajah Menggunakan ICD (Inner Canthal Distance)
+                icd_pixel_width = euclidean_distance(left_pts[3], right_pts[0]) # Landmark 133(kiri) ke 362(kanan)
+                
+                # Cek jika permintan kalibrasi masuk
+                if self.calibrate_requested:
+                    self.focal_length = modulDist.calculate_focal_length(self.KNOWN_DISTANCE, self.KNOWN_WIDTH, icd_pixel_width)
+                    self.state["is_calibrated"] = True
+                    self.calibrate_requested = False
+                
+                if self.state["is_calibrated"]:
+                    dist = modulDist.distance_to_camera(self.focal_length, self.KNOWN_WIDTH, icd_pixel_width)
+                    self.state["distance"] = round(dist, 1)
                 
                 cv2.polylines(frame, [np.array(left_pts)], True, (0, 255, 0), 1)
                 cv2.polylines(frame, [np.array(right_pts)], True, (0, 255, 0), 1)
@@ -193,6 +219,13 @@ async def websocket_endpoint(websocket: WebSocket):
         while True:
             # Terima frame Base64 dari format Data URL frontend
             data = await websocket.receive_text()
+            
+            # Jika mendapat pesan kalibrasi
+            if data == "calibrate":
+                detector.calibrate_requested = True
+                await websocket.send_json({"calibrating": True})
+                continue
+                
             header, encoded = data.split(",", 1) if "," in data else ("", data)
             
             # Konversi Base64 jadi numpy array dan decode pakai OpenCV

@@ -68,6 +68,26 @@ function startSession() {
   document.getElementById('totalBlinks').textContent = '0';
   document.getElementById('totalAlerts').textContent = '0';
   updateAlerts([]);
+  
+  // Show calibration overlay
+  document.getElementById('calibrationOverlay').style.display = 'flex';
+  
+  document.getElementById('calibrateBtn').onclick = () => {
+    const btn = document.getElementById('calibrateBtn');
+    btn.textContent = "Mengkalibrasi...";
+    btn.style.opacity = "0.7";
+    btn.style.cursor = "wait";
+    
+    // Tunggu sampai WebSocket siap jika belum terbuka
+    const tryCalibrate = () => {
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send("calibrate");
+      } else {
+        setTimeout(tryCalibrate, 500); // coba lagi dalam 500ms
+      }
+    };
+    tryCalibrate();
+  };
 
   sessionInterval = setInterval(tickSession, 1000);
   timerInterval   = setInterval(tickTimer, 1000);
@@ -112,6 +132,10 @@ function resetSession() {
   document.getElementById('totalAlerts').textContent = '—';
   document.getElementById('durStatus').textContent = '00:00:00';
   document.getElementById('durBar').style.width = '0%';
+
+  document.getElementById('calibrateBtn').textContent = 'Kalibrasi Sekarang';
+  document.getElementById('calibrateBtn').style.opacity = '1';
+  document.getElementById('calibrateBtn').style.cursor = 'pointer';
 
   ['statEar','statDist','statBlink','statStatus'].forEach(id => {
     document.getElementById(id).textContent = '—';
@@ -338,8 +362,21 @@ function startCameraAndWebsocket() {
         ws.onmessage = (event) => {
             const data = JSON.parse(event.data);
             
+            if (data.calibrating) {
+                return; // Wait for the real frame data
+            }
+
+            if (data.is_calibrated) {
+                document.getElementById('calibrationOverlay').style.display = 'none';
+            } else if (document.getElementById('calibrationOverlay').style.display !== 'flex') {
+                 // Kalau backend belum terkalibrasi (misal restart server), tampilkan kembali
+                 document.getElementById('calibrationOverlay').style.display = 'flex';
+                 return; // Jangan update UI sebelum kalibrasi selesai
+            }
+            
             // HUD Dalam Video
             document.getElementById('hudEar').textContent = data.current_ear.toFixed(2);
+            document.getElementById('hudDist').textContent = data.distance + ' cm';
             document.getElementById('hudBlink').textContent = data.blink_rate_per_minute + '/min';
             document.getElementById('hudFps').textContent   = "LIVE FPS: ~7.0 fps";
             document.getElementById('hudConf').textContent  = "100.0%"; // As CNN confidence is abstracted
@@ -360,11 +397,23 @@ function startCameraAndWebsocket() {
             blinkEl.className = 'cam-stat-val ' + (data.blink_rate_per_minute < 12 ? 'warning' : 'normal');   
 
             let statusClass = 'normal';    
-            if(data.is_fatigued || data.is_drowsy) { statusClass = 'danger'; }
+              let statusText = data.message.includes("Normal") ? "Normal" : (data.is_drowsy ? "Mengantuk" : "Lelah");
+              
+              if (data.is_fatigued || data.is_drowsy) { 
+                  statusClass = 'danger'; 
+              }
+              
+              if (data.distance > 0 && data.distance < 46) {
+                  statusClass = 'danger';
+                  if (statusText === "Normal") {
+                      statusText = "Jarak Bahaya";
+                  }
+              } else if (data.distance > 61) {
+                  if (statusClass === 'normal') statusClass = 'warning';
+              }
 
-            const statusEl = document.getElementById('statStatus');
-            statusEl.textContent = data.message.includes("Normal") ? "Normal" : 
-                                   (data.is_drowsy ? "Mengantuk" : "Lelah");
+              const statusEl = document.getElementById('statStatus');
+              statusEl.textContent = statusText;
             statusEl.className = 'cam-stat-val ' + statusClass;
             document.getElementById('statStatusSub').textContent = data.message;
             
@@ -377,6 +426,20 @@ function startCameraAndWebsocket() {
             document.getElementById('earStatus').textContent = data.is_drowsy ? 'Terpejam Lama' : (data.current_ear < threshold ? 'Berkedip' : 'Melek');                                             
             document.getElementById('earStatus').className = 'metric-status ' + (data.is_drowsy ? 'danger' : data.current_ear < threshold ? 'warning' : 'normal');                        
             
+            const distPct = Math.min(100, Math.max(0, (data.distance / 80) * 100));
+            if (document.getElementById('distBar')) {
+                document.getElementById('distBar').style.width = distPct + '%';
+                document.getElementById('distBar').style.background = data.distance < 46 ? 'var(--red)' : data.distance > 61 ? 'var(--amber)' : 'var(--green)';
+                document.getElementById('distStatus').textContent = data.distance < 46 ? 'Terlalu Dekat' : data.distance > 61 ? 'Terlalu Jauh' : 'Ideal';
+                document.getElementById('distStatus').className = 'metric-status ' + (data.distance < 46 ? 'danger' : data.distance > 61 ? 'warning' : 'normal');
+            }
+            
+            const distEl = document.getElementById('statDist');
+            if (distEl) {
+                distEl.textContent = data.distance + ' cm';
+                distEl.className = 'cam-stat-val ' + (data.distance < 46 ? 'danger' : data.distance > 61 ? 'warning' : 'normal');
+            }
+
             const blinkPct = Math.min(100, (data.blink_rate_per_minute / 20) * 100);
             document.getElementById('blinkBar').style.width  = blinkPct + '%';
             document.getElementById('blinkStatus').textContent = data.blink_rate_per_minute < 12 ? 'Rendah' : data.blink_rate_per_minute > 20 ? 'Tinggi' : 'Normal';                                                
@@ -386,6 +449,8 @@ function startCameraAndWebsocket() {
             const alerts = [];
             
             // Prioritaskan alert berdasarkan boolean logika backend yang memperhitungkan waktu tahanan (is_fatigued/is_drowsy)
+            if (data.distance > 0 && data.distance < 46) alerts.push({ type: 'danger', msg: `Jarak layar terlalu dekat (${data.distance} cm). Standar OSHA: 46–61 cm. Mundurkan kursi atau layar.` });
+            
             if (data.is_drowsy) {
                 alerts.push({ type: 'danger', msg: `PERINGATAN! MATA TERPEJAM LAMA (MENGANTUK/MICROSLEEP). Istirahat sekarang!` });
             } else if (data.is_fatigued) {
