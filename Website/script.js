@@ -324,14 +324,15 @@ function startCameraAndWebsocket() {
             hiddenCanvas.width = 640;
             hiddenCanvas.height = 480;
             
-            // Potong frame kamera ke canvas dan kirim (Sekitar 6-7 FPS untuk ringan server)
+            // Potong frame kamera ke canvas dan kirim (~15 FPS agar pergerakan debugging backend mulus)
             captureInterval = setInterval(() => {
                 if(videoElement.readyState === videoElement.HAVE_ENOUGH_DATA) {
                     ctx.drawImage(videoElement, 0, 0, hiddenCanvas.width, hiddenCanvas.height);
-                    const base64Data = hiddenCanvas.toDataURL('image/jpeg', 0.5);
+                    // kompresi 0.4 sudah lebih dari cukup dan efisien memori base64
+                    const base64Data = hiddenCanvas.toDataURL('image/jpeg', 0.4); 
                     ws.send(base64Data);
                 }
-            }, 150);
+            }, 66); // Interval 66ms adalah sekitar ~15 FPS
         };
 
         ws.onmessage = (event) => {
@@ -346,9 +347,13 @@ function startCameraAndWebsocket() {
             // HUD Dashboard
             document.getElementById('totalBlinks').textContent = data.total_blinks;
             
+            const threshold = data.dynamic_threshold;
+            const thresWarn = threshold + 0.02; // sedikit batas peringatan
+
             const earEl = document.getElementById('statEar');
             earEl.textContent = data.current_ear.toFixed(2);
-            earEl.className = 'cam-stat-val ' + (data.current_ear < 0.25 ? 'danger' : data.current_ear < 0.27 ? 'warning' : 'normal');                                                            
+            earEl.className = 'cam-stat-val ' + (data.current_ear < threshold ? 'danger' : data.current_ear < thresWarn ? 'warning' : 'normal');                                                            
+            document.getElementById('statEarSub').textContent = `ambang batas: ${threshold.toFixed(2)}`;
             
             const blinkEl = document.getElementById('statBlink');
             blinkEl.textContent = data.blink_rate_per_minute + '/min';
@@ -364,11 +369,13 @@ function startCameraAndWebsocket() {
             document.getElementById('statStatusSub').textContent = data.message;
             
             // Progress Bar Status di Sidebar Kanan
-            const earPct = Math.min(100, Math.max(0, (1 - data.current_ear / 0.35) * 100));
+            // Skalakan sehingga ambang batas kira-kira di representasikan ke percentage visual
+            const earPct = Math.min(100, Math.max(0, (data.current_ear / 0.40) * 100));
             document.getElementById('earBar').style.width = earPct + '%';
-            document.getElementById('earBar').style.background = data.current_ear < 0.25 ? 'var(--red)' : data.current_ear < 0.27 ? 'var(--amber)' : 'var(--green)';                                
-            document.getElementById('earStatus').textContent = data.current_ear < 0.25 ? 'Kelelahan' : data.current_ear < 0.27 ? 'Sedang' : 'Normal';                                             
-            document.getElementById('earStatus').className = 'metric-status ' + (data.current_ear < 0.25 ? 'danger' : data.current_ear < 0.27 ? 'warning' : 'normal');                        
+            // Hindari lonjakan visual merah yang membuat panik hanya karena pengguna berkedip (1-2 frame)
+            document.getElementById('earBar').style.background = data.is_drowsy ? 'var(--red)' : (data.current_ear < threshold ? 'var(--amber)' : 'var(--green)');                                
+            document.getElementById('earStatus').textContent = data.is_drowsy ? 'Terpejam Lama' : (data.current_ear < threshold ? 'Berkedip' : 'Melek');                                             
+            document.getElementById('earStatus').className = 'metric-status ' + (data.is_drowsy ? 'danger' : data.current_ear < threshold ? 'warning' : 'normal');                        
             
             const blinkPct = Math.min(100, (data.blink_rate_per_minute / 20) * 100);
             document.getElementById('blinkBar').style.width  = blinkPct + '%';
@@ -377,12 +384,19 @@ function startCameraAndWebsocket() {
 
             // Bangun Array Alert untuk Realtime list
             const alerts = [];
-            if (data.current_ear < 0.25) alerts.push({ type: 'danger',  msg: `EAR Score ${data.current_ear.toFixed(2)} menunjukkan kelelahan mata. Istirahat sekarang.` });         
-            else if (data.current_ear < 0.27) alerts.push({ type: 'warning', msg: `EAR Score ${data.current_ear.toFixed(2)} mendekati batas kelelahan.` });                           
+            
+            // Prioritaskan alert berdasarkan boolean logika backend yang memperhitungkan waktu tahanan (is_fatigued/is_drowsy)
+            if (data.is_drowsy) {
+                alerts.push({ type: 'danger', msg: `PERINGATAN! MATA TERPEJAM LAMA (MENGANTUK/MICROSLEEP). Istirahat sekarang!` });
+            } else if (data.is_fatigued) {
+                alerts.push({ type: 'warning', msg: `Kedipan mata berada di laju abnormal. Indikasi Computer Vision Syndrome (CVS).` });
+            }
+
             if (data.blink_rate_per_minute < 12 && data.blink_rate_per_minute > 0) alerts.push({ type: 'warning', msg: `Frekuensi kedip ${data.blink_rate_per_minute}/min di bawah normal. Usahakan berkedip.` });         
-            if (data.is_drowsy) alerts.push({ type: 'danger', msg: `PERINGATAN! PENGGUNA MENGANTUK!` });         
-            if (sessionSeconds > 3600) alerts.push({ type: 'warning', msg: `Sesi >1 jam. Pertimbangkan istirahat.` });                     
-            if (alerts.length === 0) alerts.push({ type: 'info', msg: 'Semua parameter terpantau baik.' });                  
+            if (sessionSeconds > 3600) alerts.push({ type: 'warning', msg: `Sesi berjalan >1 jam. Pertimbangkan istirahat.` });                     
+            
+            // Jika tidak ada alert yang critical, pastikan defaultnya rileks
+            if (alerts.length === 0) alerts.push({ type: 'info', msg: 'Semua parameter terpantau baik. Pertahankan!' });                  
             updateAlerts(alerts);
         };
 

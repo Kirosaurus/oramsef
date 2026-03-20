@@ -5,12 +5,31 @@ import math
 import threading
 import time
 import base64
+import queue
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
 # Inisialisasi FastAPI
 app = FastAPI(title="Eye Fatigue Detection API")
+
+# === GUI Debugging Thread ===
+# Window imshow dijalankan di thread terpisah agar tidak memblokir (stutter) aliran WebSocket yang berjalan secara asynchronous.
+display_queue = queue.Queue(maxsize=1)
+
+def display_thread():
+    while True:
+        frame = display_queue.get()
+        if frame is None:
+            break
+        cv2.imshow("Backend Debugging - OpenCV", frame)
+        # Tangkap tombol 'q' meskipun dari debugger window
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+
+# Jalankan thread display sebagai daemon (langsung mati ketika server ditutup)
+threading.Thread(target=display_thread, daemon=True).start()
+# ============================
 
 # Aktifkan CORS agar website frontend bisa mengambil data
 app.add_middleware(
@@ -153,6 +172,11 @@ class FatigueDetector:
                         self.state["message"] = "PERINGATAN: PENGGUNA MENGANTUK!"
         return self.state, frame
 
+# API GET HTTP untuk mengecek status (Debugging)
+@app.get("/api/status")
+def api_status():
+    return {"status": "Backend Aktif dan Tersedia", "message": "Gunakan websocket di endpoint ws://localhost:8000/ws/detect untuk data realtime kamera."}
+
 # === Endpoint WebSocket untuk Terhubung dengan Website ===
 @app.websocket("/ws/detect")
 async def websocket_endpoint(websocket: WebSocket):
@@ -162,8 +186,8 @@ async def websocket_endpoint(websocket: WebSocket):
     detector = FatigueDetector()
     mp_face_mesh = mp.solutions.face_mesh
     face_mesh = mp_face_mesh.FaceMesh(max_num_faces=1, refine_landmarks=True, 
-                                      min_detection_confidence=0.5, 
-                                      min_tracking_confidence=0.5)
+    min_detection_confidence=0.5, 
+    min_tracking_confidence=0.5)
     
     try:
         while True:
@@ -178,8 +202,27 @@ async def websocket_endpoint(websocket: WebSocket):
             
             # Jika frame berhasil dibuat
             if frame is not None:
-                # Proses frame untuk hitung EAR
+                # Proses frame untuk hitung EAR (tambah model/logika lain nanti spt Distance)
                 state, processed_frame = detector.process_frame(frame, face_mesh)
+                
+                # --- TAMBAHAN DEBUGGING (cv2.imshow) ---
+                # Gambarkan informasi EAR & Alert di layar agar bisa dibandingkan dengan data di website
+                cv2.putText(processed_frame, f"EAR: {state['current_ear']} (Thresh: {state['dynamic_threshold']})", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+                cv2.putText(processed_frame, f"Blinks/min: {state['blink_rate_per_minute']}", (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 0), 2)
+                cv2.putText(processed_frame, f"State: {state['message']}", (10, 90), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
+                
+                # Masukkan frame secara asynchronous ke display_queue tanpa block event loop
+                if display_queue.full():
+                    try:
+                        display_queue.get_nowait() # Buang frame usang jika tertunda
+                    except queue.Empty:
+                        pass
+                try:
+                    display_queue.put_nowait(processed_frame)
+                except queue.Full:
+                    pass
+                # ---------------------------------------
+
                 # Kirim state kembali ke web
                 await websocket.send_json(state)
                 
@@ -187,6 +230,9 @@ async def websocket_endpoint(websocket: WebSocket):
         print("Koneksi ditutup oleh Web Frontend")
     finally:
         face_mesh.close()
+        # Saat websocket putus, hilangkan window debugging
+        display_queue.put(None) 
+        cv2.destroyAllWindows()
 
 
 def run_api():
