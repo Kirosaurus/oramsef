@@ -50,6 +50,11 @@ function toggleSession() {
 function startSession() {
   isActive = true;
 
+  // Meminta izin notifikasi jika belum
+  if (window.Notification && Notification.permission !== 'granted') {
+    Notification.requestPermission();
+  }
+
   document.getElementById('startBtn').innerHTML = `
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
       <rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>
@@ -158,6 +163,16 @@ function tickSession() {
   const maxSec = 3 * 3600;
   const pct = Math.min(100, (sessionSeconds / maxSec) * 100);
   document.getElementById('durBar').style.width = pct + '%';
+
+  // Notifikasi 3 jam (Sistem Operasi)
+  if (sessionSeconds === maxSec) {
+    if (window.Notification && Notification.permission === "granted") {
+      new Notification("Batas Waktu Layar Tercapai", {
+        body: "Anda telah menatap layar lebih dari 3 jam berturut-turut. Segera istirahatkan mata dan regangkan tubuh Anda untuk mencegah Computer Vision Syndrome!",
+        icon: "https://cdn-icons-png.flaticon.com/512/3251/3251147.png" // Contoh ikon
+      });
+    }
+  }
 }
 
 function tickTimer() {
@@ -185,80 +200,6 @@ function tickTimer() {
     document.getElementById('timerRing').style.stroke = 'var(--amber)';
   }
 }
-
-// ─── DATA UPDATE ──────────────────────────────
-// function updateData() {
-//   if (!isActive) return;
-//   const ear   = earData[dataIdx % earData.length];
-//   const dist  = distData[dataIdx % distData.length];
-//   const blink = blinkData[dataIdx % blinkData.length];
-//   dataIdx++;
-
-//   const earV   = +(ear  + (Math.random() - 0.5) * 0.02).toFixed(2);
-//   const distV  = Math.round(dist  + (Math.random() - 0.5) * 4);
-//   const blinkV = Math.round(blink + (Math.random() - 0.5) * 2);
-
-//   totalBlinks += Math.round(blinkV / 30);
-//   document.getElementById('totalBlinks').textContent = totalBlinks;
-
-//   // HUD
-//   document.getElementById('hudEar').textContent   = earV.toFixed(2);
-//   document.getElementById('hudDist').textContent  = distV + ' cm';
-//   document.getElementById('hudBlink').textContent = blinkV + '/min';
-//   document.getElementById('hudFps').textContent   = (29 + Math.random()).toFixed(1) + ' fps';
-//   document.getElementById('hudConf').textContent  = (97 + Math.random()).toFixed(1) + '%';
-
-//   // Stats bar
-//   const earEl = document.getElementById('statEar');
-//   earEl.textContent = earV.toFixed(2);
-//   earEl.className = 'cam-stat-val ' + (earV < 0.25 ? 'danger' : earV < 0.27 ? 'warning' : 'normal');
-
-//   const distEl = document.getElementById('statDist');
-//   distEl.textContent = distV + ' cm';
-//   distEl.className = 'cam-stat-val ' + (distV < 46 ? 'danger' : distV > 61 ? 'warning' : 'normal');
-
-//   const blinkEl = document.getElementById('statBlink');
-//   blinkEl.textContent = blinkV + '/min';
-//   blinkEl.className = 'cam-stat-val ' + (blinkV < 12 ? 'warning' : 'normal');
-
-//   let status = 'Normal', statusClass = 'normal', statusSub = 'Kondisi baik';
-//   if      (earV < 0.25 || distV < 38) { status = 'Tinggi'; statusClass = 'danger';  statusSub = 'Kelelahan terdeteksi'; }
-//   else if (earV < 0.27 || distV < 46) { status = 'Sedang'; statusClass = 'warning'; statusSub = 'Perlu perhatian'; }
-
-//   const statusEl = document.getElementById('statStatus');
-//   statusEl.textContent = status;
-//   statusEl.className = 'cam-stat-val ' + statusClass;
-//   document.getElementById('statStatusSub').textContent = statusSub;
-
-//   // Metric bars
-//   const earPct = Math.min(100, Math.max(0, (1 - earV / 0.35) * 100));
-//   document.getElementById('earBar').style.width      = earPct + '%';
-//   document.getElementById('earBar').style.background = earV < 0.25 ? 'var(--red)' : earV < 0.27 ? 'var(--amber)' : 'var(--green)';
-//   document.getElementById('earStatus').textContent   = earV < 0.25 ? 'Kelelahan' : earV < 0.27 ? 'Sedang' : 'Normal';
-//   document.getElementById('earStatus').className     = 'metric-status ' + (earV < 0.25 ? 'danger' : earV < 0.27 ? 'warning' : 'normal');
-
-//   const distPct = Math.min(100, Math.max(0, (distV / 80) * 100));
-//   document.getElementById('distBar').style.width      = distPct + '%';
-//   document.getElementById('distBar').style.background = distV < 46 ? 'var(--red)' : distV > 61 ? 'var(--amber)' : 'var(--green)';
-//   document.getElementById('distStatus').textContent   = distV < 46 ? 'Terlalu Dekat' : distV > 61 ? 'Terlalu Jauh' : 'Ideal';
-//   document.getElementById('distStatus').className     = 'metric-status ' + (distV < 46 ? 'danger' : distV > 61 ? 'warning' : 'normal');
-
-//   const blinkPct = Math.min(100, (blinkV / 20) * 100);
-//   document.getElementById('blinkBar').style.width  = blinkPct + '%';
-//   document.getElementById('blinkStatus').textContent = blinkV < 12 ? 'Rendah' : blinkV > 20 ? 'Tinggi' : 'Normal';
-//   document.getElementById('blinkStatus').className   = 'metric-status ' + (blinkV < 12 ? 'warning' : 'normal');
-
-//   // Build alerts
-//   const alerts = [];
-//   if (distV < 46)  alerts.push({ type: 'danger',  msg: `Jarak layar terlalu dekat (${distV} cm). Standar OSHA: 46–61 cm. Mundurkan kursi atau layar.` });
-//   if (earV < 0.25) alerts.push({ type: 'danger',  msg: `EAR Score ${earV.toFixed(2)} menunjukkan kelelahan mata yang signifikan. Istirahat sekarang.` });
-//   else if (earV < 0.27) alerts.push({ type: 'warning', msg: `EAR Score ${earV.toFixed(2)} mendekati ambang batas kelelahan (0.25).` });
-//   if (blinkV < 12) alerts.push({ type: 'warning', msg: `Frekuensi kedip ${blinkV}/min di bawah normal (12–20/min). Usahakan berkedip lebih sering.` });
-//   if (sessionSeconds > 3600) alerts.push({ type: 'warning', msg: `Sesi berjalan lebih dari 1 jam. Pertimbangkan istirahat lebih panjang.` });
-//   if (alerts.length === 0) alerts.push({ type: 'info', msg: 'Semua parameter dalam kondisi baik. Pertahankan posisi dan jarak layar Anda.' });
-
-//   updateAlerts(alerts);
-// }
 
 function updateAlerts(alerts) {
   const list  = document.getElementById('alertsList');
@@ -370,7 +311,7 @@ function startCameraAndWebsocket() {
                 document.getElementById('calibrationOverlay').style.display = 'none';
             } else if (document.getElementById('calibrationOverlay').style.display !== 'flex') {
                  // Kalau backend belum terkalibrasi (misal restart server), tampilkan kembali
-                 document.getElementById('calibrationOverlay').style.display = 'flex';
+                document.getElementById('calibrationOverlay').style.display = 'flex';
                  return; // Jangan update UI sebelum kalibrasi selesai
             }
             
@@ -479,4 +420,17 @@ function stopCamera() {
     if(videoStream) {
         videoStream.getTracks().forEach(track => track.stop());
     }
+}
+
+// ═══════════════════════════════════════════
+// PWA & SERVICE WORKER REGISTRATION
+// ═══════════════════════════════════════════
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').then((registration) => {
+      console.log('ServiceWorker siap mengizinkan aplikasi PWA ini diinstal ke Sistem Operasi.');
+    }).catch(err => {
+      console.log('ServiceWorker registration gagal: ', err);
+    });
+  });
 }

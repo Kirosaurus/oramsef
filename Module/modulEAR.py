@@ -10,7 +10,7 @@ import sys
 import os
 
 # Menambahkan parent directory ke sys.path untuk import modulDist
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__) + "Module", "..")))
 import modulDist
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
