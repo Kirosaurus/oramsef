@@ -29,10 +29,16 @@ def display_thread():
         frame = display_queue.get()
         if frame is None:
             break
-        cv2.imshow("Backend Debugging - OpenCV", frame)
-        # Tangkap tombol 'q' meskipun dari debugger window
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
+        if isinstance(frame, str) and frame == "CLOSE":
+            cv2.destroyAllWindows()
+            continue
+        try:
+            cv2.imshow("Backend Debugging - OpenCV", frame)
+            # Tangkap tombol 'q' meskipun dari debugger window
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                pass
+        except Exception:
+            pass
 
 # Jalankan thread display sebagai daemon (langsung mati ketika server ditutup)
 threading.Thread(target=display_thread, daemon=True).start()
@@ -91,7 +97,8 @@ class FatigueDetector:
             "blink_rate_per_minute": 0,
             "message": "Menunggu...",
             "is_calibrated": False,
-            "distance": 0.0
+            "distance": 0.0,
+            "focal_length": 0.0
         }
         self.calibrate_requested = False
         self.focal_length = 0.0
@@ -129,6 +136,24 @@ class FatigueDetector:
                 left_ear, left_pts, l_v1, l_v2, l_h1 = eye_aspect_ratio(face_landmarks, LEFT_EYE, w, h)
                 right_ear, right_pts, r_v1, r_v2, r_h1 = eye_aspect_ratio(face_landmarks, RIGHT_EYE, w, h)
                 
+                # Menghitung Jarak Wajah Menggunakan ICD (Inner Canthal Distance)
+                icd_pixel_width = euclidean_distance(left_pts[3], right_pts[0]) # Landmark 133(kiri) ke 362(kanan)
+                
+                # Cek jika permintan kalibrasi masuk
+                if self.calibrate_requested:
+                    self.focal_length = modulDist.calculate_focal_length(self.KNOWN_DISTANCE, self.KNOWN_WIDTH, icd_pixel_width)
+                    self.state["is_calibrated"] = True
+                    self.state["focal_length"] = self.focal_length
+                    self.calibrate_requested = False
+                    self.start_time = time.time() # Reset perhitungan waktu mulai karena baru aktif
+                
+                if not self.state["is_calibrated"]:
+                    self.state["message"] = "Menunggu Kalibrasi..."
+                    cv2.polylines(frame, [np.array(left_pts)], True, (0, 255, 255), 1)
+                    cv2.polylines(frame, [np.array(right_pts)], True, (0, 255, 255), 1)
+                    return self.state, frame
+                
+                # --- Jika Sudah Dikalibrasi ---
                 avg_ear = (left_ear + right_ear) / 2.0
                 self.state["current_ear"] = round(avg_ear, 3)
                 
@@ -141,18 +166,8 @@ class FatigueDetector:
 
                 self.state["dynamic_threshold"] = round(dynamic_threshold, 3)
                 
-                # Menghitung Jarak Wajah Menggunakan ICD (Inner Canthal Distance)
-                icd_pixel_width = euclidean_distance(left_pts[3], right_pts[0]) # Landmark 133(kiri) ke 362(kanan)
-                
-                # Cek jika permintan kalibrasi masuk
-                if self.calibrate_requested:
-                    self.focal_length = modulDist.calculate_focal_length(self.KNOWN_DISTANCE, self.KNOWN_WIDTH, icd_pixel_width)
-                    self.state["is_calibrated"] = True
-                    self.calibrate_requested = False
-                
-                if self.state["is_calibrated"]:
-                    dist = modulDist.distance_to_camera(self.focal_length, self.KNOWN_WIDTH, icd_pixel_width)
-                    self.state["distance"] = round(dist, 1)
+                dist = modulDist.distance_to_camera(self.focal_length, self.KNOWN_WIDTH, icd_pixel_width)
+                self.state["distance"] = round(dist, 1)
                 
                 cv2.polylines(frame, [np.array(left_pts)], True, (0, 255, 0), 1)
                 cv2.polylines(frame, [np.array(right_pts)], True, (0, 255, 0), 1)
@@ -187,7 +202,7 @@ class FatigueDetector:
                             self.state["message"] = "Normal (>17 kedip/mnt)"
                         elif CVS_LOWER_LIMIT <= blink_rate <= CVS_UPPER_LIMIT: 
                             self.state["is_fatigued"] = True
-                            self.state["message"] = "Astenopia/CVS (9-17 kedip/mnt)"
+                            self.state["message"] = "Astenopia/CVS (<9 kedip/mnt)"
                         else:
                             self.state["is_fatigued"] = True
                             self.state["message"] = "CVS Parah/Mata Kering (<9 kedip/mnt)"
@@ -220,6 +235,18 @@ async def websocket_endpoint(websocket: WebSocket):
             # Terima frame Base64 dari format Data URL frontend
             data = await websocket.receive_text()
             
+            # Jika mendapat pesan restore kalibrasi dari frontend
+            if data.startswith("restore_calibration"):
+                if ":" in data:
+                    try:
+                        detector.focal_length = float(data.split(":")[1])
+                        detector.state["focal_length"] = detector.focal_length
+                    except ValueError:
+                        pass
+                detector.state["is_calibrated"] = True
+                await websocket.send_json({"calibrating": False, "is_calibrated": True})
+                continue
+
             # Jika mendapat pesan kalibrasi
             if data == "calibrate":
                 detector.calibrate_requested = True
@@ -228,10 +255,20 @@ async def websocket_endpoint(websocket: WebSocket):
                 
             header, encoded = data.split(",", 1) if "," in data else ("", data)
             
+            if not encoded:
+                continue
+
+            # Tambahkan padding jika kurang
+            encoded += "=" * ((4 - len(encoded) % 4) % 4)
+
             # Konversi Base64 jadi numpy array dan decode pakai OpenCV
-            img_bytes = base64.b64decode(encoded)
-            nparr = np.frombuffer(img_bytes, np.uint8)
-            frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+            try:
+                img_bytes = base64.b64decode(encoded)
+                nparr = np.frombuffer(img_bytes, np.uint8)
+                frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+            except Exception as e:
+                print("Error decoding frame:", e)
+                continue
             
             # Jika frame berhasil dibuat
             if frame is not None:
@@ -263,9 +300,16 @@ async def websocket_endpoint(websocket: WebSocket):
         print("Koneksi ditutup oleh Web Frontend")
     finally:
         face_mesh.close()
-        # Saat websocket putus, hilangkan window debugging
-        display_queue.put(None) 
-        cv2.destroyAllWindows()
+        # Saat websocket putus, hilangkan window debugging tanpa mematikan thread
+        if not display_queue.full():
+            display_queue.put("CLOSE")
+        else:
+            try:
+                display_queue.get_nowait()
+                display_queue.put_nowait("CLOSE")
+            except:
+                pass
+        # cv2.destroyAllWindows() jangan dipanggil langsung di sini karena beda thread
 
 
 def run_api():

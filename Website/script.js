@@ -29,7 +29,15 @@ let totalBlinks = 0;
 let totalAlertCount = 0;
 let restSeconds = 20;
 let isResting = false;
+let isCalibrated = false;
+let savedFocalLength = 0;
 
+let isCurrentlyFatigued = false;
+let isCurrentlyClose = false;
+  let isCurrentlyLowBlink = false;
+  let fatigueSeconds = 0;
+  let closeSeconds = 0;
+  let lowBlinkSeconds = 0;
 let sessionInterval = null;
 let timerInterval = null;
 let dataInterval = null;
@@ -74,8 +82,12 @@ function startSession() {
   document.getElementById('totalAlerts').textContent = '0';
   updateAlerts([]);
   
-  // Show calibration overlay
-  document.getElementById('calibrationOverlay').style.display = 'flex';
+  // Show calibration overlay if not already calibrated
+  if (!isCalibrated) {
+    document.getElementById('calibrationOverlay').style.display = 'flex';
+  } else {
+    document.getElementById('calibrationOverlay').style.display = 'none';
+  }
   
   document.getElementById('calibrateBtn').onclick = () => {
     const btn = document.getElementById('calibrateBtn');
@@ -101,6 +113,7 @@ function startSession() {
 
 function stopSession() {
   isActive = false;
+  // isCalibrated tidak direset di sini, agar jika mulai sesi lagi tidak perlu kalibrasi ulang
   clearInterval(sessionInterval);
   clearInterval(timerInterval);
   clearInterval(dataInterval); stopCamera();
@@ -127,12 +140,22 @@ function resetSession() {
   totalBlinks     = 0;
   totalAlertCount = 0;
   dataIdx         = 0;
+  isCalibrated    = false;
+  savedFocalLength = 0;
+  
+  isCurrentlyFatigued = false;
+  isCurrentlyClose = false;
+  isCurrentlyLowBlink = false;
+  fatigueSeconds = 0;
+  closeSeconds = 0;
+  lowBlinkSeconds = 0;
+  hasHardStopped = false;
 
   document.getElementById('sessionClock').textContent = '00:00:00';
   document.getElementById('timerNum').textContent = '20:00';
   document.getElementById('timerPct').textContent = '0%';
   document.getElementById('timerBar').style.width = '0%';
-  document.getElementById('timerRing').setAttribute('stroke-dashoffset', 47);
+  document.getElementById('timerRing').setAttribute('stroke-dashoffset', 0);
   document.getElementById('totalBlinks').textContent = '—';
   document.getElementById('totalAlerts').textContent = '—';
   document.getElementById('durStatus').textContent = '00:00:00';
@@ -152,6 +175,7 @@ function resetSession() {
 
 // ─── TICKS ────────────────────────────────────
 function tickSession() {
+  if (!isCalibrated) return;
   sessionSeconds++;
   const h = Math.floor(sessionSeconds / 3600);
   const m = Math.floor((sessionSeconds % 3600) / 60);
@@ -164,18 +188,56 @@ function tickSession() {
   const pct = Math.min(100, (sessionSeconds / maxSec) * 100);
   document.getElementById('durBar').style.width = pct + '%';
 
-  // Notifikasi 3 jam (Sistem Operasi)
-  if (sessionSeconds === maxSec) {
+  // Logika 3 Jam + Kelelahan (Hard Stop)
+  if (isCurrentlyFatigued) {
+    fatigueSeconds++;
+  } else {
+    fatigueSeconds = 0;
+  }
+
+  // Jika durasi melebihi 3 jam dan mata terpantau lelah selama 10 detik berturut-turut
+  if (sessionSeconds >= maxSec && fatigueSeconds >= 10 && !hasHardStopped) {
+    triggerHardStop();
+  }
+
+  // Logika Jarak Terlalu Dekat (10 detik berturut-turut)
+  if (isCurrentlyClose) {
+    closeSeconds++;
+  } else {
+    closeSeconds = 0;
+  }
+
+  if (closeSeconds >= 10) {
     if (window.Notification && Notification.permission === "granted") {
-      new Notification("Batas Waktu Layar Tercapai", {
-        body: "Anda telah menatap layar lebih dari 3 jam berturut-turut. Segera istirahatkan mata dan regangkan tubuh Anda untuk mencegah Computer Vision Syndrome!",
-        icon: "https://cdn-icons-png.flaticon.com/512/3251/3251147.png" // Contoh ikon
+      new Notification("Waspada Jarak Layar!", {
+        body: "Wajah Anda berada terlalu dekat dengan layar. Mundurkan posisi kursi atau tubuh Anda demi kesehatan mata!",
+        icon: "icon-192x192.png" 
       });
     }
+    // Reset agar tidak spam setiap detik, sehingga perlu 10 detik kedekatan konstan lagi untuk memicu notifikasi baru
+    closeSeconds = 0; 
+  }
+
+  // Logika Frekuensi Kedip Rendah (10 detik berturut-turut)
+  if (isCurrentlyLowBlink) {
+    lowBlinkSeconds++;
+  } else {
+    lowBlinkSeconds = 0;
+  }
+
+  if (lowBlinkSeconds >= 10) {
+    if (window.Notification && Notification.permission === "granted") {
+      new Notification("Waspada Frekuensi Kedip Rendah!", {
+        body: "Frekuensi kedipan Anda berada di bawah standar normal (9-17/min). Segera usahakan berkedip dan istirahatkan mata sejenak!",
+        icon: "icon-192x192.png" 
+      });
+    }
+    lowBlinkSeconds = 0;
   }
 }
 
 function tickTimer() {
+  if (!isCalibrated) return;
   if (timerSeconds <= 0) {
     timerSeconds = 20 * 60;
     if (!isResting) triggerRest();
@@ -232,28 +294,78 @@ function updateAlerts(alerts) {
   `).join('');
 }
 
+// ─── HARD STOP OVERLAY ────────────────────────
+function triggerHardStop() {
+  hasHardStopped = true;
+  stopSession(); // Hentikan semuanya
+
+  if (window.Notification && Notification.permission === "granted") {
+    new Notification("Sesi Selesai (Batas Kelelahan)!", {
+      body: "Anda telah menatap layar sangat lama dan mata terlihat lelah. Sistem menghentikan pemantauan. Tolong beristirahatlah dengan cukup!",
+      icon: "icon-192x192.png"
+    });
+  }
+
+  document.getElementById('hardStopOverlay').classList.add('show');
+}
+
+function closeHardStop() {
+  document.getElementById('hardStopOverlay').classList.remove('show');
+  resetSession(); // Memulai bersih kembali semua stat jika user ingin benar-benar lanjut nanti
+}
+
 // ─── REST OVERLAY ─────────────────────────────
 function triggerRest() {
+  if (!isResting) {
+    if (isActive) {
+      stopSession(); // Jeda sesi otomatis
+    }
+    
+    // Tampilkan notifikasi OS
+    if (Notification.permission === "granted") {
+      new Notification("Waktunya Istirahat 20-20-20!", {
+        body: "Sudah 20 menit! Alihkan pandangan Anda ke objek berjarak ±6 meter selama 20 detik.",
+        icon: "icon-192x192.png" // opsional
+      });
+    }
+  }
+
   isResting   = true;
   restSeconds = 20;
+  
+  const btnRest = document.getElementById('btnRestSkip');
+  btnRest.disabled = true;
+  btnRest.style.opacity = '0.5';
+  btnRest.style.cursor = 'not-allowed';
+  btnRest.textContent = 'Tunggu...';
+  
   document.getElementById('restOverlay').classList.add('show');
   document.getElementById('restCount').textContent = restSeconds;
   document.getElementById('restProgress').style.width = '100%';
 
   restInterval = setInterval(() => {
     restSeconds--;
-    document.getElementById('restCount').textContent = restSeconds;
-    document.getElementById('restProgress').style.width = ((restSeconds / 20) * 100) + '%';
-    if (restSeconds <= 0) skipRest();
+    if (restSeconds >= 0) {
+      document.getElementById('restCount').textContent = restSeconds;
+      document.getElementById('restProgress').style.width = ((restSeconds / 20) * 100) + '%';
+    }
+    if (restSeconds <= 0) {
+      clearInterval(restInterval);
+      document.getElementById('restCount').textContent = "0";
+      btnRest.disabled = false;
+      btnRest.style.opacity = '1';
+      btnRest.style.cursor = 'pointer';
+      btnRest.textContent = 'Lanjutkan Sesi \u2192';
+    }
   }, 1000);
 }
 
-function skipRest() {
-  clearInterval(restInterval);
+function finishRest() {
   isResting = false;
   document.getElementById('restOverlay').classList.remove('show');
   timerSeconds = 20 * 60;
   document.getElementById('timerRing').style.stroke = 'var(--green)';
+  startSession(); // Otomatis lanjut sesi
 }
 
 // ─── UTILS ────────────────────────────────────
@@ -289,6 +401,11 @@ function startCameraAndWebsocket() {
             hiddenCanvas.width = 640;
             hiddenCanvas.height = 480;
             
+            // Jika sudah terkalibrasi di frontend, beritahu backend untuk setup state kalibrasi
+            if (isCalibrated) {
+                ws.send("restore_calibration:" + savedFocalLength);
+            }
+            
             // Potong frame kamera ke canvas dan kirim (~15 FPS agar pergerakan debugging backend mulus)
             captureInterval = setInterval(() => {
                 if(videoElement.readyState === videoElement.HAVE_ENOUGH_DATA) {
@@ -308,20 +425,25 @@ function startCameraAndWebsocket() {
             }
 
             if (data.is_calibrated) {
+                isCalibrated = true;
+                if (data.focal_length !== undefined) {
+                    savedFocalLength = data.focal_length;
+                }
                 document.getElementById('calibrationOverlay').style.display = 'none';
             } else if (document.getElementById('calibrationOverlay').style.display !== 'flex') {
                  // Kalau backend belum terkalibrasi (misal restart server), tampilkan kembali
-                document.getElementById('calibrationOverlay').style.display = 'flex';
+                 isCalibrated = false;
+                 document.getElementById('calibrationOverlay').style.display = 'flex';
                  return; // Jangan update UI sebelum kalibrasi selesai
             }
-            
-            // HUD Dalam Video
-            document.getElementById('hudEar').textContent = data.current_ear.toFixed(2);
-            document.getElementById('hudDist').textContent = data.distance + ' cm';
-            document.getElementById('hudBlink').textContent = data.blink_rate_per_minute + '/min';
-            document.getElementById('hudFps').textContent   = "LIVE FPS: ~7.0 fps";
-            document.getElementById('hudConf').textContent  = "100.0%"; // As CNN confidence is abstracted
-            
+
+            if (!isCalibrated) return;
+
+            // TRACKING STATE FOR 3 HOURS & DISTANCE
+            isCurrentlyFatigued = data.current_ear < data.dynamic_threshold;
+            isCurrentlyClose = data.distance > 0 && data.distance < 46;
+            isCurrentlyLowBlink = data.blink_rate_per_minute > 0 && data.blink_rate_per_minute < 9;
+
             // HUD Dashboard
             document.getElementById('totalBlinks').textContent = data.total_blinks;
             
@@ -335,7 +457,7 @@ function startCameraAndWebsocket() {
             
             const blinkEl = document.getElementById('statBlink');
             blinkEl.textContent = data.blink_rate_per_minute + '/min';
-            blinkEl.className = 'cam-stat-val ' + (data.blink_rate_per_minute < 12 ? 'warning' : 'normal');   
+            blinkEl.className = 'cam-stat-val ' + (data.blink_rate_per_minute < 9 ? 'warning' : 'normal');   
 
             let statusClass = 'normal';    
               let statusText = data.message.includes("Normal") ? "Normal" : (data.is_drowsy ? "Mengantuk" : "Lelah");
@@ -381,10 +503,10 @@ function startCameraAndWebsocket() {
                 distEl.className = 'cam-stat-val ' + (data.distance < 46 ? 'danger' : data.distance > 61 ? 'warning' : 'normal');
             }
 
-            const blinkPct = Math.min(100, (data.blink_rate_per_minute / 20) * 100);
+            const blinkPct = Math.min(100, (data.blink_rate_per_minute / 17) * 100);
             document.getElementById('blinkBar').style.width  = blinkPct + '%';
-            document.getElementById('blinkStatus').textContent = data.blink_rate_per_minute < 12 ? 'Rendah' : data.blink_rate_per_minute > 20 ? 'Tinggi' : 'Normal';                                                
-            document.getElementById('blinkStatus').className   = 'metric-status ' + (data.blink_rate_per_minute < 12 ? 'warning' : 'normal'); 
+            document.getElementById('blinkStatus').textContent = data.blink_rate_per_minute < 9 ? 'Rendah' : data.blink_rate_per_minute > 17 ? 'Tinggi' : 'Normal';                                                
+            document.getElementById('blinkStatus').className   = 'metric-status ' + (data.blink_rate_per_minute < 9 ? 'warning' : 'normal'); 
 
             // Bangun Array Alert untuk Realtime list
             const alerts = [];
@@ -398,7 +520,7 @@ function startCameraAndWebsocket() {
                 alerts.push({ type: 'warning', msg: `Kedipan mata berada di laju abnormal. Indikasi Computer Vision Syndrome (CVS).` });
             }
 
-            if (data.blink_rate_per_minute < 12 && data.blink_rate_per_minute > 0) alerts.push({ type: 'warning', msg: `Frekuensi kedip ${data.blink_rate_per_minute}/min di bawah normal. Usahakan berkedip.` });         
+            if (data.blink_rate_per_minute < 9 && data.blink_rate_per_minute > 0) alerts.push({ type: 'warning', msg: `Frekuensi kedip ${data.blink_rate_per_minute}/min di bawah normal. Usahakan berkedip.` });         
             if (sessionSeconds > 3600) alerts.push({ type: 'warning', msg: `Sesi berjalan >1 jam. Pertimbangkan istirahat.` });                     
             
             // Jika tidak ada alert yang critical, pastikan defaultnya rileks

@@ -1319,7 +1319,29 @@ footer {
 }
 
 /* ALERTS PANEL */
-.alerts-list { display: flex; flex-direction: column; gap: 8px; padding: 14px; }
+.alerts-list { 
+  display: flex; 
+  flex-direction: column; 
+  gap: 8px; 
+  padding: 14px; 
+  height: 220px; /* Diubah dari max-height menjadi height agar selalu tetap tinggi */
+  overflow-y: auto; 
+}
+
+.alerts-list::-webkit-scrollbar {
+  width: 6px;
+}
+.alerts-list::-webkit-scrollbar-track {
+  background: var(--surface);
+  border-radius: 4px;
+}
+.alerts-list::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 4px;
+}
+.alerts-list::-webkit-scrollbar-thumb:hover {
+  background: #aaa;
+}
 
 .alert-item {
   display: flex;

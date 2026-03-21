@@ -77,19 +77,9 @@
         <div class="cam-active" id="camActive">
           <!-- Video asli dari Webcam -->
           <video id="webcamView" autoplay muted playsinline
-            style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; border-radius: 8px; z-index: 1;"></video>
+            style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; border-radius: 8px; z-index: 1; transform: scaleX(-1);"></video>
           <!-- Canvas Tersembunyi -->
           <canvas id="hiddenCanvas" style="display: none;"></canvas>
-
-          <div class="scan-sweep" style="z-index: 2;"></div>
-
-          <!-- Face frame (beri z-index agar muncul di atas video) -->
-          <div class="face-frame" style="z-index: 2;">
-            <div class="ff-corner ff-tl"></div>
-            <div class="ff-corner ff-tr"></div>
-            <div class="ff-corner ff-bl"></div>
-            <div class="ff-corner ff-br"></div>
-          </div>
 
           <!-- Landmark dots - Left eye -->
           <div class="lm-det" id="ll1" style="top:38%;left:32%;"></div>
@@ -132,11 +122,16 @@
           </div>
           
           <!-- Calibration overlay -->
-          <div id="calibrationOverlay" style="position: absolute; top:0; left:0; width:100%; height:100%; display:none; flex-direction:column; justify-content:center; align-items:center; background: rgba(0,0,0,0.8); z-index: 10; font-family: 'Plus Jakarta Sans', sans-serif;">
-            <div style="background: var(--surface); padding: 24px; border-radius: 12px; text-align: center; max-width: 80%; border: 1px solid var(--border);">
-              <h3 style="margin-top: 0; color: var(--ink);">Kalibrasi Jarak</h3>
-              <p style="color: var(--ink-dim); font-size: 14px; margin-bottom: 20px;">Harap luruskan lengan Anda ke arah layar untuk mengukur estimasi jarak normal wajah Anda terhadap monitor.</p>
-              <button id="calibrateBtn" class="btn" style="width: 100%; background: var(--blue); color: #fff; padding: 10px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600;">Kalibrasi Sekarang</button>
+          <div id="calibrationOverlay" style="position: absolute; top:0; left:0; width:100%; height:100%; display:none; flex-direction:column; justify-content:center; align-items:center; background: rgba(10, 15, 13, 0.85); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 10;">
+            <div style="background: var(--surface-card); padding: 32px; border-radius: 20px; text-align: center; max-width: 340px; width: 90%; border: 1px solid var(--border); box-shadow: 0 16px 32px rgba(0,0,0,0.4); animation: popIn 0.3s ease;">
+              <div style="width: 64px; height: 64px; background: rgba(29, 158, 117, 0.1); border-radius: 16px; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
+                <svg viewBox="0 0 24 24" style="width: 32px; height: 32px; stroke: var(--green); fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round;">
+                  <path d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/>
+                </svg>
+              </div>
+              <h3 style="margin-top: 0; font-family: var(--font-display); font-size: 20px; font-weight: 700; color: var(--ink); margin-bottom: 12px;">Kalibrasi Jarak</h3>
+              <p style="color: var(--ink-dim); font-size: 14px; margin-bottom: 24px; line-height: 1.6;">Harap luruskan lengan Anda ke arah layar untuk mengukur estimasi jarak wajah Anda yang akurat.</p>
+              <button id="calibrateBtn" class="btn-start" style="width: 100%; font-weight: 600;">Kalibrasi Sekarang</button>
             </div>
           </div>
         </div>
@@ -157,7 +152,7 @@
         <div class="cam-stat">
           <div class="cam-stat-label">Frekuensi Kedip</div>
           <div class="cam-stat-val" id="statBlink">—</div>
-          <div class="cam-stat-sub">normal: 12–20/min</div>
+          <div class="cam-stat-sub">normal: 9–17/min</div>
         </div>
         <div class="cam-stat">
           <div class="cam-stat-label">Status CVS</div>
@@ -256,7 +251,7 @@
           <span class="panel-title">Notifikasi Aktif</span>
           <span class="cam-badge standby" id="alertCount">0 peringatan</span>
         </div>
-        <div class="alerts-list" id="alertsList">
+        <div class="alerts-list" id="alertsList" style="height: 220px; overflow-y: auto;">
           <div class="alert-item muted">
             <div class="alert-text">Belum ada notifikasi. Mulai sesi untuk memantau kondisi mata Anda.</div>
           </div>
@@ -297,10 +292,21 @@
           <span class="bottom-item-val">MediaPipe v0.10 + CNN</span>
         </div>
       </div>
-      <div style="font-size:11px;color:var(--ink-dim);">Semua pemrosesan dilakukan secara lokal &bull; Tidak ada data
-        yang dikirim ke server</div>
-    </div>
   </main>
+
+  <!-- HARD STOP OVERLAY -->
+  <div class="rest-overlay" id="hardStopOverlay">
+    <div class="rest-card" style="border: 2px solid var(--red);">
+      <div class="rest-eye" style="background: rgba(239, 68, 68, 0.1);">
+        <svg viewBox="0 0 24 24" style="stroke: var(--red);">
+          <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+        </svg>
+      </div>
+      <h2 class="rest-title" style="color: var(--red);">Sistem Dihentikan</h2>
+      <p class="rest-desc">Anda telah bekerja lebih dari 3 jam dan mata mulai kelelahan. Pemantauan telah dihentikan secara otomatis untuk menjaga kesehatan mata Anda. Silakan tutup layar dan beristirahat.</p>
+      <button class="rest-skip" onclick="closeHardStop()" style="margin-top:20px;width:100%; border:1px solid var(--border);color:var(--ink);">Tutup Peringatan Secara Permanen</button>
+    </div>
+  </div>
 
   <!-- REST OVERLAY -->
   <div class="rest-overlay" id="restOverlay">
@@ -318,7 +324,7 @@
       <div class="rest-progress">
         <div class="rest-progress-fill" id="restProgress" style="width:100%"></div>
       </div>
-      <button class="rest-skip" onclick="skipRest()">Lewati &rarr;</button>
+      <button class="rest-skip" id="btnRestSkip" onclick="finishRest()" disabled style="opacity: 0.5; cursor: not-allowed;">Lanjutkan Sesi &rarr;</button>
     </div>
   </div>
 
