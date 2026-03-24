@@ -1,0 +1,144 @@
+Contoh output startup_monitor.py saat menjalankan FESMARO backend pertama kali.
+Output ini dihasilkan pada laptop dengan RAM 8 GB, SSD SATA, CPU Intel Core i5 gen 10.
+
+=== Fase 1: Sebelum backend dijalankan (t = 0 detik) ===
+
+╔══════════════════════════════════════════════════════════╗
+║           🚀 FESMARO Startup Monitor                    ║
+╠══════════════════════════════════════════════════════════╣
+║  Status : ⏳ Menunggu server siap di port 8000...        ║
+║  Waktu  :    0.0 detik sejak monitor dimulai             ║
+╠══════════════════════════════════════════════════════════╣
+║  📊 Statistik Sistem                                    ║
+║  CPU    : [░░░░░░░░░░░░░░░░░░░░]    5.2%               ║
+║  RAM    : [████████░░░░░░░░░░░░]   41.0%               ║
+║  RAM    : 3.3 GB / 8.0 GB                               ║
+║  Tersedia: 4.7 GB                                        ║
+║  RAM Peak: 3.3 GB                                        ║
+╠══════════════════════════════════════════════════════════╣
+║  🔍 Proses backend belum terdeteksi.                    ║
+║     Jalankan: python Module/modulEAR.py                 ║
+╠══════════════════════════════════════════════════════════╣
+║  📋 Tahapan Startup (estimasi)                          ║
+║  ⬜ Import library (cv2, mediapipe, numpy...)            ║
+║  ⬜ FastAPI + Uvicorn mulai berjalan                     ║
+║  ⬜ WebSocket endpoint siap                              ║
+║  ⬜ MediaPipe Face Mesh dimuat saat koneksi pertama      ║
+╠══════════════════════════════════════════════════════════╣
+║  ⏳ Harap tunggu... Proses startup sedang berlangsung.  ║
+║     Ini NORMAL, terutama pada first run.                ║
+╚══════════════════════════════════════════════════════════╝
+
+
+=== Fase 2: Library sedang diimport (t = 8 detik) ===
+
+╔══════════════════════════════════════════════════════════╗
+║           🚀 FESMARO Startup Monitor                    ║
+╠══════════════════════════════════════════════════════════╣
+║  Status : ⏳ Menunggu server siap di port 8000...        ║
+║  Waktu  :    8.0 detik sejak monitor dimulai             ║
+╠══════════════════════════════════════════════════════════╣
+║  📊 Statistik Sistem                                    ║
+║  CPU    : [████████████░░░░░░░░]   62.4%               ║
+║  RAM    : [██████████░░░░░░░░░░]   51.2%               ║
+║  RAM    : 4.1 GB / 8.0 GB                               ║
+║  Tersedia: 3.9 GB                                        ║
+║  RAM Peak: 4.1 GB                                        ║
+╠══════════════════════════════════════════════════════════╣
+║  🐍 Proses Backend Terdeteksi (1 proses)                ║
+║  🟡 PID 12345  | CPU:  42.1% | RAM: 412 MB             ║
+║  RAM Backend Peak : 412 MB                              ║
+╠══════════════════════════════════════════════════════════╣
+║  📋 Tahapan Startup (estimasi)                          ║
+║  ✅ Import library (cv2, mediapipe, numpy...)            ║
+║  ⬜ FastAPI + Uvicorn mulai berjalan                     ║
+║  ⬜ WebSocket endpoint siap                              ║
+║  ⬜ MediaPipe Face Mesh dimuat saat koneksi pertama      ║
+╠══════════════════════════════════════════════════════════╣
+║  ⏳ Harap tunggu... Proses startup sedang berlangsung.  ║
+║     Ini NORMAL, terutama pada first run.                ║
+╚══════════════════════════════════════════════════════════╝
+
+
+=== Fase 3: Server Uvicorn sudah berjalan (t = 18 detik) ===
+
+╔══════════════════════════════════════════════════════════╗
+║           🚀 FESMARO Startup Monitor                    ║
+╠══════════════════════════════════════════════════════════╣
+║  Status : ✅ Server AKTIF  (ws://localhost:8000/ws/detect) ║
+║  Waktu  :   18.0 detik sejak monitor dimulai             ║
+╠══════════════════════════════════════════════════════════╣
+║  📊 Statistik Sistem                                    ║
+║  CPU    : [███░░░░░░░░░░░░░░░░░]   14.7%               ║
+║  RAM    : [███████████░░░░░░░░░]   55.0%               ║
+║  RAM    : 4.4 GB / 8.0 GB                               ║
+║  Tersedia: 3.6 GB                                        ║
+║  RAM Peak: 4.4 GB                                        ║
+╠══════════════════════════════════════════════════════════╣
+║  🐍 Proses Backend Terdeteksi (1 proses)                ║
+║  🟢 PID 12345  | CPU:   3.2% | RAM: 580 MB             ║
+║  RAM Backend Peak : 580 MB                              ║
+╠══════════════════════════════════════════════════════════╣
+║  📋 Tahapan Startup (estimasi)                          ║
+║  ✅ Import library (cv2, mediapipe, numpy...)            ║
+║  ✅ FastAPI + Uvicorn mulai berjalan                     ║
+║  ✅ WebSocket endpoint siap                              ║
+║  ⬜ MediaPipe Face Mesh dimuat saat koneksi pertama      ║
+╠══════════════════════════════════════════════════════════╣
+║  ✅ Backend siap! Buka Website/index.html di browser.   ║
+║     Saat koneksi WebSocket pertama, MediaPipe akan      ║
+║     dimuat (~20–60 detik, RAM naik 2–3 GB).             ║
+╚══════════════════════════════════════════════════════════╝
+
+
+=== Fase 4: MediaPipe Face Mesh dimuat setelah WebSocket pertama (t = 55 detik) ===
+
+Pada fase ini, pengguna telah membuka website dan WebSocket terhubung.
+MediaPipe Face Mesh mulai dimuat ke memori. RAM bisa naik hingga 3-4 GB.
+
+╔══════════════════════════════════════════════════════════╗
+║           🚀 FESMARO Startup Monitor                    ║
+╠══════════════════════════════════════════════════════════╣
+║  Status : ✅ Server AKTIF  (ws://localhost:8000/ws/detect) ║
+║  Waktu  :   55.0 detik sejak monitor dimulai             ║
+╠══════════════════════════════════════════════════════════╣
+║  📊 Statistik Sistem                                    ║
+║  CPU    : [████████████████░░░░]   82.3%               ║
+║  RAM    : [████████████████████]   91.5%               ║
+║  RAM    : 7.3 GB / 8.0 GB                               ║
+║  Tersedia: 0.7 GB                                        ║
+║  RAM Peak: 7.3 GB                                        ║
+╠══════════════════════════════════════════════════════════╣
+║  🐍 Proses Backend Terdeteksi (1 proses)                ║
+║  🟢 PID 12345  | CPU:  78.4% | RAM: 3.1 GB            ║
+║  RAM Backend Peak : 3.1 GB                              ║
+╠══════════════════════════════════════════════════════════╣
+║  📋 Tahapan Startup (estimasi)                          ║
+║  ✅ Import library (cv2, mediapipe, numpy...)            ║
+║  ✅ FastAPI + Uvicorn mulai berjalan                     ║
+║  ✅ WebSocket endpoint siap                              ║
+║  ✅ MediaPipe Face Mesh dimuat saat koneksi pertama      ║
+╠══════════════════════════════════════════════════════════╣
+║  ✅ Backend siap! Buka Website/index.html di browser.   ║
+║     Saat koneksi WebSocket pertama, MediaPipe akan      ║
+║     dimuat (~20–60 detik, RAM naik 2–3 GB).             ║
+╚══════════════════════════════════════════════════════════╝
+
+
+=== Ringkasan setelah Ctrl+C ===
+
+✋ Monitor dihentikan.
+
+📈 Ringkasan Session:
+   Durasi monitor  : 67.3 detik
+   Peak RAM sistem : 7.3 GB
+   Peak RAM backend: 3.1 GB
+   Status akhir    : ✅ Server berhasil berjalan
+
+
+=== Catatan ===
+
+- RAM 3-4 GB yang digunakan oleh proses backend adalah NORMAL untuk MediaPipe Face Mesh.
+- First run selalu lebih lambat karena model perlu di-cache ke disk.
+- Second run biasanya 50-70% lebih cepat.
+- Untuk detail lebih lanjut, baca STARTUP-OPTIMIZATION.md
