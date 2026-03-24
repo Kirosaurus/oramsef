@@ -28,11 +28,11 @@ Aktifkan Virtual Environment:
 - **Mac/Linux**: `source .venv/bin/activate`
 
 ### 2. Instal Library/Modul yang Dibutuhkan
-Instal semua *dependencies* (ketergantungan server) menggunakan `pip`:
+Instal semua *dependencies* menggunakan `pip` berdasarkan file `requirements.txt` yang telah disediakan:
 ```bash
-pip install opencv-python mediapipe numpy fastapi uvicorn websockets
+pip install -r requirements.txt
 ```
-*(Catatan: Semua library ini sangat penting agar backend analisis AI dapat berjalan).*
+*(Catatan: Ini akan menginstal opencv-python, mediapipe, numpy, fastapi, uvicorn, dan websockets).*
 
 ---
 

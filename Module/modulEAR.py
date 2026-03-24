@@ -103,7 +103,7 @@ class FatigueDetector:
         self.calibrate_requested = False
         self.focal_length = 0.0
         self.KNOWN_WIDTH = 6.3 # Estimasi ICD (Inner Canthal Distance) rata-rata manusia
-        self.KNOWN_DISTANCE = 50.0 # Asumsi estimasi jarak lengan saat kalibrasi
+        self.KNOWN_DISTANCE = 60.0 # Asumsi estimasi jarak lengan saat kalibrasi
 
     def update_and_get_threshold(self, side, v1, v2, h1):
         if h1 == 0: return 0.22
