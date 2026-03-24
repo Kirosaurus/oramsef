@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.backends.legacy:build"
+
+[project]
+name = "fesmaro"
+version = "1.0.0"
+description = "Sistem deteksi kesehatan mata & jarak layar berbasis AI secara real-time"
+readme = "README.md"
+requires-python = ">=3.8,<3.12"
+license = {text = "MIT"}
+dependencies = [
+    "opencv-python",
+    "mediapipe",
+    "numpy",
+    "fastapi",
+    "uvicorn",
+    "websockets",
+]
+
+[project.urls]
+Homepage = "https://github.com/Kirosaurus/oramsef"
