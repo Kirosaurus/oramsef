@@ -10,9 +10,11 @@ Sistem ini terbagi menjadi dua bagian:
 
 ## 🛠️ Prasyarat (Prerequisites)
 Sebelum menjalankan program, pastikan Anda telah menginstal:
-- **Python 3.8 - 3.11** (MediaPipe sangat disarankan berjalan stabil di rentang versi ini).
+- **Python 3.8 - 3.11** dari **[python.org](https://www.python.org/downloads/)** (bukan dari Windows Store). MediaPipe sangat disarankan berjalan stabil di rentang versi ini.
 - Webcam / Kamera fungsional
 - Browser Modern (Chrome, Edge, atau Firefox)
+
+> **🪟 Pengguna Windows**: Jika Anda menemui error `No Python in C:\Users\...\WindowsApps\...`, baca **[SETUP-GUIDE.md](SETUP-GUIDE.md)** untuk panduan lengkap dan troubleshooting.
 
 ---
 
@@ -24,7 +26,8 @@ Buka terminal/CMD di dalam folder proyek ini lalu jalankan:
 python -m venv .venv
 ```
 Aktifkan Virtual Environment:
-- **Windows**: `.venv\Scripts\activate` atau `.\.venv\Scripts\Activate.ps1`
+- **Windows (CMD)**: `.venv\Scripts\activate`
+- **Windows (PowerShell)**: `.\.venv\Scripts\Activate.ps1`
 - **Mac/Linux**: `source .venv/bin/activate`
 
 ### 2. Instal Library/Modul yang Dibutuhkan
@@ -72,6 +75,7 @@ Buka *browser* Anda dan kunjungi URL: **`http://localhost:5500`**
 - **Hard Stop (3 Jam)**: Mode perlindungan ekstrem jika terjadi kelelahan konstan (*fatigue*) setelah pemakaian menembus 3 jam nonstop.
 
 ## 🤝 Troubleshooting & Pesan Error Umum
+- **`No Python in C:\Users\...\WindowsApps\...`**: Instal Python dari [python.org](https://www.python.org/downloads/) (bukan Windows Store) dengan mencentang **"Add Python to PATH"**. Lihat [SETUP-GUIDE.md](SETUP-GUIDE.md) untuk panduan lengkap.
 - **`WARNING: failed to connect to WebSocket`**: Pastikan server backend `modulEAR.py` Anda sudah berjalan. Periksa apakah ada error Python di terminal backend.
 - **Notifikasi Desktop tidak muncul**: Izinkan (Allow) *Notifications* di ujung *URL/Address bar* *browser* Anda saat layar awal meminta izin.
 - **Kamera tidak mau terbuka**: Pastikan Anda belum menggunakan kamera di Tab, Google Meet, Zoom, atau aplikasi lain karena kamera hanya bisa dipakai oleh satu program dalam satu waktu.
