@@ -75,3 +75,42 @@ Buka *browser* Anda dan kunjungi URL: **`http://localhost:5500`**
 - **`WARNING: failed to connect to WebSocket`**: Pastikan server backend `modulEAR.py` Anda sudah berjalan. Periksa apakah ada error Python di terminal backend.
 - **Notifikasi Desktop tidak muncul**: Izinkan (Allow) *Notifications* di ujung *URL/Address bar* *browser* Anda saat layar awal meminta izin.
 - **Kamera tidak mau terbuka**: Pastikan Anda belum menggunakan kamera di Tab, Google Meet, Zoom, atau aplikasi lain karena kamera hanya bisa dipakai oleh satu program dalam satu waktu.
+
+---
+
+## ⏱️ Performa Startup & Penggunaan RAM
+
+### First Run Lambat (30–120 Detik) — NORMAL!
+
+Jika `python Module/modulEAR.py` terasa sangat lambat atau Task Manager menunjukkan **3–4 GB RAM** terpakai, ini adalah perilaku **normal**. Penyebabnya adalah inisialisasi model **MediaPipe Face Mesh** yang membutuhkan alokasi memori besar untuk inferensi real-time.
+
+**Tanda aplikasi sudah siap** — tunggu hingga muncul pesan ini di terminal:
+```
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+```
+
+**Second run akan jauh lebih cepat** karena model sudah ter-*cache*.
+
+### Monitoring Real-Time Saat Startup
+
+Untuk memantau proses startup secara live (CPU, RAM, status server):
+
+```bash
+# Instal dependensi monitoring (satu kali):
+pip install psutil
+
+# Jalankan monitor di terminal terpisah:
+python startup_monitor.py
+```
+
+Lihat file `startup_progress.txt` untuk contoh tampilan output monitor.
+
+### Panduan Lengkap Optimasi Startup
+
+Untuk penjelasan mendalam tentang:
+- Mengapa RAM bisa 3–4 GB
+- Cara mengurangi penggunaan memori
+- Tips akselerasi GPU
+- Troubleshooting crash saat startup
+
+👉 Baca **[STARTUP-OPTIMIZATION.md](STARTUP-OPTIMIZATION.md)**
