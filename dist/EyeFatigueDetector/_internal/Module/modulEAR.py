@@ -50,7 +50,7 @@ def do_shutdown():
     os._exit(0)
 
 def schedule_shutdown(delay=10.0):
-    global shutdown_timer, keepalive_clients
+    global shutdown_timer, keepalive_clients, active_clients
     # Jangan matikan program jika web masih terhubung ke sensor aktif atau ada tab aktif lain!
     if keepalive_clients > 0 or active_clients > 0:
         return
@@ -92,8 +92,12 @@ async def keepalive_ws(websocket: WebSocket):
     cancel_shutdown()
     try:
         # Menunggu sampai browser benar-benar ditutup
+        # Loop ini juga akan menerima pesan 'ping' dari client untuk mencegah idle timeout.
         while True:
-            await websocket.receive_text()
+            msg = await websocket.receive_text()
+            if msg == "ping":
+                # Bisa digunakan untuk membalas 'pong' jika perlu, tapi receive_text sudah cukup menahan koneksi.
+                pass
     except WebSocketDisconnect:
         pass
     finally:
@@ -346,12 +350,12 @@ async def websocket_endpoint(websocket: WebSocket):
                         except ValueError:
                             pass
                     detector.state["is_calibrated"] = True
-                    await websocket.send_json({"calibrating": False, "is_calibrated": True})
+                    # Jangan gunakan await websocket.send_json di sini untuk mencegah Concurrent Sending. State akan otomatis dikirim oleh main loop
                 
                 # Jika mendapat pesan kalibrasi
                 elif data == "calibrate":
                     detector.calibrate_requested = True
-                    await websocket.send_json({"calibrating": True})
+                    # Jika perlu membalas "calibrating": True, biarkan main loop yang menanganinya dengan state
         except WebSocketDisconnect:
             detector.is_running = False
         except Exception:
@@ -380,6 +384,9 @@ async def websocket_endpoint(websocket: WebSocket):
                 continue
             
             empty_frame_count = 0
+            
+            # Simpan raw frame sebelum digambar polylines untuk dikirim ke website
+            raw_frame_for_web = frame.copy()
                 
             # Proses frame untuk hitung EAR (tambah model/logika lain nanti spt Distance)
             state, processed_frame = detector.process_frame(frame, face_mesh)
@@ -397,7 +404,7 @@ async def websocket_endpoint(websocket: WebSocket):
             # ---------------------------------------
 
             # Convert frame kembali ke bas64 agar video tetap tampil di web Frontend
-            _, buffer = cv2.imencode('.jpg', processed_frame, [cv2.IMWRITE_JPEG_QUALITY, 50])
+            _, buffer = cv2.imencode('.jpg', raw_frame_for_web, [cv2.IMWRITE_JPEG_QUALITY, 50])
             frame_base64 = base64.b64encode(buffer).decode('utf-8')
             state["frame_base64"] = f"data:image/jpeg;base64,{frame_base64}"
 

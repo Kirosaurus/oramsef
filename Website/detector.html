@@ -4,6 +4,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
   <title>EyeGuard — Detektor CVS</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -75,52 +78,9 @@
 
         <!-- Active state -->
         <div class="cam-active" id="camActive">
-          <!-- Video asli dari Webcam -->
-          <video id="webcamView" autoplay muted playsinline
-            style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; border-radius: 8px; z-index: 1; transform: scaleX(-1);"></video>
-          <!-- Canvas Tersembunyi -->
-          <canvas id="hiddenCanvas" style="display: none;"></canvas>
+          <!-- Gambar asli dari Webcam via Backend -->
+          <img id="webcamView" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; border-radius: 8px; z-index: 1; transform: scaleX(-1);">
 
-          <!-- Landmark dots - Left eye -->
-          <div class="lm-det" id="ll1" style="top:38%;left:32%;"></div>
-          <div class="lm-det" id="ll2" style="top:35%;left:37%;"></div>
-          <div class="lm-det" id="ll3" style="top:35%;left:43%;"></div>
-          <div class="lm-det" id="ll4" style="top:38%;left:46%;"></div>
-          <div class="lm-det" id="ll5" style="top:41%;left:43%;"></div>
-          <div class="lm-det" id="ll6" style="top:41%;left:37%;"></div>
-
-          <!-- Landmark dots - Right eye -->
-          <div class="lm-det" id="rl1" style="top:38%;right:32%;"></div>
-          <div class="lm-det" id="rl2" style="top:35%;right:37%;"></div>
-          <div class="lm-det" id="rl3" style="top:35%;right:43%;"></div>
-          <div class="lm-det" id="rl4" style="top:38%;right:46%;"></div>
-          <div class="lm-det" id="rl5" style="top:41%;right:43%;"></div>
-          <div class="lm-det" id="rl6" style="top:41%;right:37%;"></div>
-
-          <!-- HUD top-left -->
-          <div class="hud-top-left">
-            <div class="hud-chip-det">
-              <span class="hud-chip-label">EAR</span>
-              <span id="hudEar">0.28</span>
-            </div>
-            <div class="hud-chip-det">
-              <span class="hud-chip-label">DIST</span>
-              <span id="hudDist">48 cm</span>
-            </div>
-            <div class="hud-chip-det">
-              <span class="hud-chip-label">BLINK</span>
-              <span id="hudBlink">15/min</span>
-            </div>
-          </div>
-
-          <!-- HUD bottom -->
-          <div class="hud-bottom">
-            <div class="hud-fps" id="hudFps">30.0 fps</div>
-            <div class="hud-confidence">
-              Keypoint conf: <strong id="hudConf">98.2%</strong>
-            </div>
-          </div>
-          
           <!-- Calibration overlay -->
           <div id="calibrationOverlay" style="position: absolute; top:0; left:0; width:100%; height:100%; display:none; flex-direction:column; justify-content:center; align-items:center; background: rgba(10, 15, 13, 0.85); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 10;">
             <div style="background: var(--surface-card); padding: 32px; border-radius: 20px; text-align: center; max-width: 340px; width: 90%; border: 1px solid var(--border); box-shadow: 0 16px 32px rgba(0,0,0,0.4); animation: popIn 0.3s ease;">

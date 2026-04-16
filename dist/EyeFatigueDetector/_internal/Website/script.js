@@ -175,7 +175,7 @@ function resetSession() {
 
 // ─── TICKS ────────────────────────────────────
 function tickSession() {
-  if (!isCalibrated) return;
+  if (!isCalibrated || isResting) return;
   sessionSeconds++;
   const h = Math.floor(sessionSeconds / 3600);
   const m = Math.floor((sessionSeconds % 3600) / 60);
@@ -237,7 +237,7 @@ function tickSession() {
 }
 
 function tickTimer() {
-  if (!isCalibrated) return;
+  if (!isCalibrated || isResting) return;
   if (timerSeconds <= 0) {
     timerSeconds = 20 * 60;
     if (!isResting) triggerRest();
@@ -318,9 +318,9 @@ function closeHardStop() {
 function triggerRest() {
   if (!isResting) {
     if (isActive) {
-      stopSession(); // Jeda sesi otomatis
+      // stopSession(); // Jeda sesi otomatis kita matikan, biarkan backend tetap jalan
     }
-    
+
     // Tampilkan notifikasi OS
     if (Notification.permission === "granted") {
       new Notification("Waktunya Istirahat 20-20-20!", {
@@ -365,7 +365,7 @@ function finishRest() {
   document.getElementById('restOverlay').classList.remove('show');
   timerSeconds = 20 * 60;
   document.getElementById('timerRing').style.stroke = 'var(--green)';
-  startSession(); // Otomatis lanjut sesi
+  // startSession(); // Tidak perlu start ulang, karena sesi tidak pernah stop
 }
 
 // ─── UTILS ────────────────────────────────────
@@ -414,13 +414,11 @@ function startCameraAndWebsocket() {
         ws = null;
     }
 
-    document.getElementById('hudFps').textContent = "Connecting...";
-
     ws = new WebSocket("ws://localhost:8000/ws/detect");
-    
+
     ws.onopen = () => {
         console.log("Terhubung ke AI Pendeteksi Kelelahan.");
-        
+
         // Jika sudah terkalibrasi di frontend, beritahu backend untuk setup state kalibrasi
         if (isCalibrated) {
             ws.send("restore_calibration:" + savedFocalLength);
@@ -555,7 +553,6 @@ function stopCamera() {
     }
     const videoElement = document.getElementById('webcamView');
     videoElement.src = "";
-    document.getElementById('hudFps').textContent = "FPS: -";
 }
 
 // === KEEPALIVE KONEKSI GLOBAL ===
@@ -573,9 +570,17 @@ function connectKeepAlive() {
     kaWs.onopen = () => {
         console.log("KeepAlive Terhubung!");
         if(keepAliveReconnectTimer) clearTimeout(keepAliveReconnectTimer);
+        
+        // PING heartbeats agar koneksi tidak drop/timeout
+        kaWs.pingInterval = setInterval(() => {
+            if (kaWs.readyState === WebSocket.OPEN) {
+                kaWs.send("ping");
+            }
+        }, 5000);
     };
 
     kaWs.onclose = () => {
+        if (kaWs.pingInterval) clearInterval(kaWs.pingInterval);
         // Coba reconnect secara singkat bila pengguna sekadar merefresh halaman (F5)
         // Kita menggunakan waktu lebih lama sedikit (1500ms) agar tidak memicu deteksi terputus backend terlalu cepat.
         keepAliveReconnectTimer = setTimeout(connectKeepAlive, 1500);

@@ -73,7 +73,7 @@
  [],
  False,
  False,
- 1774707503,
+ 1774717847,
  [('runw.exe',
    'C:\\Users\\andir\\Documents\\MATERI\\KULIAH\\FESMARO\\Code\\Test\\.venv\\lib\\site-packages\\PyInstaller\\bootloader\\Windows-64bit-intel\\runw.exe',
    'EXECUTABLE')],
